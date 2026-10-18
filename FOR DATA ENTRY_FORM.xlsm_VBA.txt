@@ -1,0 +1,111 @@
+'======================================================
+' THIS FILE CONTAINS THE VBA CODE FOR YOUR DATA ENTRY FORM
+' Follow instructions at the bottom to import into Excel
+'======================================================
+
+'======================================================
+' MODULE: modDataEntry
+'======================================================
+Option Explicit
+
+'--- Global variables for the form ---
+Public CurrentSheet As String
+Public CurrentRow As Long
+Public FormMode As String ' "Add", "Edit", "View"
+
+'--- Main procedure to show the form ---
+Public Sub ShowDataEntryForm()
+    frmDataEntry.Show
+End Sub
+
+'--- Populate a listbox with data for editing selection ---
+Public Function GetLastRowIndex(sheetName As String) As Long
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    If ws.UsedRange.Rows.Count = 1 Then
+        GetLastRowIndex = 2
+    Else
+        GetLastRowIndex = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row + 1
+    End If
+End Function
+
+'--- Read a data row into the form ---
+Public Sub LoadRowToList(rowIndex As Long, sheetName As String)
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    ' Populate form fields based on sheet
+    Select Case sheetName
+        Case "01_Farmer_Profile"
+            With frmDataEntry
+                .txtRecordID.Text = ws.Cells(rowIndex, 1).Value
+                .txtCropYear.Text = ws.Cells(rowIndex, 2).Value
+                .txtFarmerName.Text = ws.Cells(rowIndex, 3).Value
+                .txtFCCode.Text = ws.Cells(rowIndex, 4).Value
+                .txtHomeAddress.Text = ws.Cells(rowIndex, 5).Value
+                .txtContractNo.Text = ws.Cells(rowIndex, 6).Value
+                .txtDateSigned.Text = ws.Cells(rowIndex, 7).Value
+                .txtFCVVariety.Text = ws.Cells(rowIndex, 8).Value
+            End With
+        ' ... similar for other sheets
+    End Select
+End Sub
+
+'--- Write form data to the current sheet ---
+Public Sub SaveFormData(sheetName As String, rowIndex As Long)
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets(sheetName)
+    Select Case sheetName
+        Case "01_Farmer_Profile"
+            With frmDataEntry
+                ws.Cells(rowIndex, 1).Value = .txtRecordID.Text
+                ws.Cells(rowIndex, 2).Value = .txtCropYear.Text
+                ws.Cells(rowIndex, 3).Value = .txtFarmerName.Text
+                ws.Cells(rowIndex, 4).Value = .txtFCCode.Text
+                ws.Cells(rowIndex, 5).Value = .txtHomeAddress.Text
+                ws.Cells(rowIndex, 6).Value = .txtContractNo.Text
+                ws.Cells(rowIndex, 7).Value = .txtDateSigned.Text
+                ws.Cells(rowIndex, 8).Value = .txtFCIVariety.Text
+            End With
+        ' ... similar for other sheets
+    End Select
+End Sub
+
+'--- Clear all form fields ---
+Public Sub ClearFormFields(sheetName As String)
+    Select Case sheetName
+        Case "01_Farmer_Profile"
+            With frmDataEntry
+                .txtRecordID.Text = ""
+                .txtCropYear.Text = ""
+                .txtFarmerName.Text = ""
+                .txtFCCode.Text = ""
+                .txtHomeAddress.Text = ""
+                .txtContractNo.Text = ""
+                .txtDateSigned.Text = ""
+                .txtFCVVariety.Text = ""
+                .txtBurleyVariety.Text = ""
+                .txtRegisteredArea.Text = ""
+                .txtLocation.Text = ""
+                .txtLongitude.Text = ""
+                .txtLatitude.Text = ""
+                .txtFarmLocation.Text = ""
+                .txtCBCode.Text = ""
+                .txtHomeLot1.Text = ""
+                .txtHomeLot2.Text = ""
+                .txtHomeLot3.Text = ""
+                .txtFarLot1.Text = ""
+                .txtFarLot2.Text = ""
+                .txtFarLot3.Text = ""
+                .txtBarn1.Text = ""
+                .txtBarn2.Text = ""
+                .txtBarn3.Text = ""
+            End With
+        ' ... similar for other sheets
+    End Select
+End Sub
+
+'======================================================
+' USERFORM: frmDataEntry
+'======================================================
+' [The UserForm code goes in a separate section]
+'
