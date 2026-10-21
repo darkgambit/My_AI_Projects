@@ -16,7 +16,7 @@ You do **not** need Loom. Pick ONE row — top rows need zero installs:
 
 This repo already contains a finished video tour of your workflows:
 
-- 🎞️ `assets/workflow-demo.mp4` — 21 seconds, 1 MB, captions burned in (also plays as the GIF in the README)
+- 🎞️ `assets/clinic-ai-agent-workflow-demo.mp4` — 56 seconds, under 1 MB, captions burned in (also plays as the GIF in the README)
 
 Upload that file to YouTube as **Unlisted** (steps at the bottom) and paste the link in your application.
 It's honest B-roll of your architecture — but a live recording (Option 1) is stronger proof, so do that when you have 15 minutes.
@@ -73,7 +73,7 @@ youtube.com → **+ Create → Upload video** → choose file → Title: `Clinic
 
 **B) Google Drive** — upload → right-click → Share → *Anyone with the link* → copy link. (Works, but first-time viewers sometimes wait for processing.)
 
-**C) Straight into the job form / LinkedIn / WhatsApp** — the 1 MB `workflow-demo.mp4` is small enough to attach or send directly.
+**C) Straight into the job form / LinkedIn / WhatsApp** — the 1 MB `clinic-ai-agent-workflow-demo.mp4` is small enough to attach or send directly.
 
 ## ✅ Finish the job
 

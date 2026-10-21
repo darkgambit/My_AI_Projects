@@ -1,0 +1,31 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:03.999
+Clinic AI Agent. WhatsApp and Messenger appointment automation, built with n8n, OpenRouter, Google Calendar and Google Sheets.
+
+00:00:03.999 --> 00:00:08.999
+Overview. Two production n8n workflows: the Clinic AI Agent (top) and the Booking sub-workflow it calls as tools (bottom).
+
+00:00:08.999 --> 00:00:14.999
+Step 1 · Message in. A patient messages on WhatsApp or Messenger. Webhooks verify with Meta, acknowledge instantly, and parse each channel's payload.
+
+00:00:14.999 --> 00:00:21.000
+Step 2 · AI agent. One normalized message reaches the Clinic AI Agent: OpenRouter LLM, conversation memory, and six booking tools.
+
+00:00:21.000 --> 00:00:27.000
+Step 3 · Tool engine. Every tool calls one sub-workflow. Route by Action branches to clinic info, availability, book, cancel, my bookings, or reschedule.
+
+00:00:27.000 --> 00:00:33.000
+Step 4 · Real availability. Booking checks live availability first: clinic hours from Google Sheets plus Google Calendar FreeBusy, so a taken slot is never offered.
+
+00:00:33.000 --> 00:00:39.000
+Step 5 · Book safely. Slot still free? Create the Google Calendar event and append the booking row to Google Sheets. Taken? The patient gets the nearest alternatives.
+
+00:00:39.000 --> 00:00:45.000
+Step 6 · Cancel & reschedule. Cancel and reschedule take the same safe path: find the patient's own booking, validate, then update Calendar and Sheets together.
+
+00:00:45.000 --> 00:00:50.999
+Step 7 · Instant confirmation. The reply is extracted and routed back on the same channel the patient used: Messenger or WhatsApp. Done in seconds, 24/7.
+
+00:00:50.999 --> 00:00:55.999
+Book, reschedule, cancel, check availability and my bookings. Full case study and workflow files on GitHub.

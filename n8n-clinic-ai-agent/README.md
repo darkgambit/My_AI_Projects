@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| 🎬 **Live walkthrough** | ⏳ **[ADD YOUR VIDEO LINK HERE]** — see [`docs/VIDEO_RECORDING_GUIDE.md`](docs/VIDEO_RECORDING_GUIDE.md) (90-second script included) |
+| 🎬 **Video walkthrough (56s, captioned)** | ▶️ [`watch.html`](watch.html) · 📹 [`assets/clinic-ai-agent-workflow-demo.mp4`](assets/clinic-ai-agent-workflow-demo.mp4) + [`captions.en.vtt`](assets/captions.en.vtt) · ☁️ [GitHub Release (permanent video link)](https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v1) |
 | 🕹️ **Interactive demo** | Open [`demo/index.html`](demo/index.html) in any browser — watch a booking flow through every node (4 scenarios) |
 | 🖼️ **Full workflow screenshot** | [`assets/workflow-overview.png`](assets/workflow-overview.png) |
 | 📥 **Importable workflows** | [`workflows/`](workflows/) — sanitized n8n JSON + export/import guide |
@@ -97,7 +97,7 @@ n8n-clinic-ai-agent/
 ├── assets/
 │   ├── workflow-overview.png  ← screenshot of both live workflows
 │   ├── workflow-demo.gif      ← animated tour (regenerate: scripts/make_gif.py)
-│   └── workflow-demo.mp4      ← same tour as a 21s video file (scripts/make_mp4.py)
+│   └── clinic-ai-agent-workflow-demo.mp4      ← 56s captioned video tour (scripts/make_video.py) + captions.en.vtt/.srt
 ├── demo/index.html            ← interactive simulation + built-in screen recorder
 ├── workflows/                 ← sanitized n8n JSON + import & sanitize guide
 ├── docs/
