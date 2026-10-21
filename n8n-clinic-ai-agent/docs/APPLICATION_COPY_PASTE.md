@@ -93,6 +93,41 @@ sheet, and the confirmation goes back on WhatsApp. Same engine handles
 reschedules and cancellations. I can show you the 90-second live demo."
 ```
 
+## 6) "One automation you built: what was the manual process before, what did you build, and roughly how many hours does it save?"
+
+```text
+Before the automation, clinic staff had to answer appointment requests manually,
+ask for the treatment and preferred time, check the clinic hours and calendar for
+available slots, go back and forth with the patient, create the calendar event,
+record the booking in a spreadsheet, and send a confirmation. Rescheduling or
+cancelling meant finding the original booking and updating both records again.
+This only worked when staff were available and created a risk of mistakes or
+double-bookings.
+
+I built a Clinic AI Agent using two n8n workflows. WhatsApp and Messenger
+webhooks receive and parse patient messages, then an OpenRouter-powered AI agent
+with conversation memory understands the request and calls booking tools. A
+separate booking sub-workflow checks clinic information and live Google Calendar
+FreeBusy availability, validates the selected slot again before writing, creates
+or updates the calendar event, and updates the Google Sheets booking log at the
+same time. It can book, check availability, list a patient's bookings, cancel,
+and reschedule, then replies through the same channel the patient used.
+
+A manual booking or change normally takes about 6–10 minutes across the
+conversation, availability check, calendar entry, spreadsheet update, and
+confirmation. At an average of 8 minutes, 10 requests per day over 26 working
+days is about 35 staff hours per month. Allowing roughly 20% for exceptions or
+staff oversight, the automation saves approximately 28 hours per month—about
+1–1.5 working hours per day—while also responding 24/7 and preventing
+double-bookings.
+```
+
+**Adjust the estimate to your actual volume:** at 8 minutes per request and an
+80% automation rate, 5 requests/day saves roughly **14 hours/month**, 10/day
+saves **28 hours/month**, and 20/day saves **56 hours/month**. Replace the
+10-per-day assumption with your real n8n execution/booking volume before
+submitting if you have it.
+
 ## Ranking: what convinces, in order
 
 1. 🎬 **Video of the live system** (YouTube Unlisted etc.) — real message → real calendar event (do this first, ~15 min)
