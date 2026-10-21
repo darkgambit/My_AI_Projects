@@ -1,6 +1,23 @@
 # ✍️ Copy-Paste Answers for Applications
 
-Replace every `[BRACKET]` before sending. Keep the numbers honest — delete any line you can't back up.
+## ✅ READY TO PASTE NOW (real links, no editing needed)
+
+**If the form asks for ONE link — paste this (video page on GitHub):**
+```
+https://github.com/darkgambit/My_AI_Projects/blob/clinic-ai-agent-demo-v1/n8n-clinic-ai-agent/assets/clinic-ai-agent-workflow-demo.mp4
+```
+
+**If you can add text/links — paste this:**
+```
+Video demo (56s, captioned): https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v1
+Full case study + workflows: https://github.com/darkgambit/My_AI_Projects/tree/arena/315aeb7f-my-ai-projects/n8n-clinic-ai-agent
+```
+
+*(After PR #1 is merged, the case-study link becomes `https://github.com/darkgambit/My_AI_Projects/tree/main/n8n-clinic-ai-agent` — the video/release links never change.)*
+
+---
+
+Replace every `[BRACKET]` below before sending. Keep the numbers honest — delete any line you can't back up.
 
 Replace these once, everywhere:
 - `[GITHUB LINK]` → `https://github.com/darkgambit/My_AI_Projects/tree/main/n8n-clinic-ai-agent` *(after merging the PR; until then use the branch/PR link)*
