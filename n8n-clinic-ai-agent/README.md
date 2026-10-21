@@ -96,8 +96,9 @@ n8n-clinic-ai-agent/
 ├── README.md                  ← this case study (the link to share)
 ├── assets/
 │   ├── workflow-overview.png  ← screenshot of both live workflows
-│   └── workflow-demo.gif      ← animated tour (regenerate: scripts/make_gif.py)
-├── demo/index.html            ← interactive node-by-node simulation
+│   ├── workflow-demo.gif      ← animated tour (regenerate: scripts/make_gif.py)
+│   └── workflow-demo.mp4      ← same tour as a 21s video file (scripts/make_mp4.py)
+├── demo/index.html            ← interactive simulation + built-in screen recorder
 ├── workflows/                 ← sanitized n8n JSON + import & sanitize guide
 ├── docs/
 │   ├── VIDEO_RECORDING_GUIDE.md  ← 5 Loom-free ways to film the REAL system + script
