@@ -2,19 +2,19 @@
 
 ## ✅ READY TO PASTE NOW (real links, no editing needed)
 
-**If the form asks for ONE link — paste this (online video player page, plays in the browser):**
+**If the form asks for ONE link — paste this (plays online directly in the browser):**
 ```
-https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html
+https://raw.githubusercontent.com/darkgambit/My_AI_Projects/clinic-ai-agent-demo-v2/n8n-clinic-ai-agent/assets/clinic-ai-agent-workflow-demo.mp4
 ```
 
 **If you can add text/links — paste this:**
 ```
-Watch the video online (66s, Full HD, captioned): https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html
+Watch the video online (66s, Full HD, captioned): https://raw.githubusercontent.com/darkgambit/My_AI_Projects/clinic-ai-agent-demo-v2/n8n-clinic-ai-agent/assets/clinic-ai-agent-workflow-demo.mp4
 Video file / release: https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v2
 Full case study + workflows: https://github.com/darkgambit/My_AI_Projects/tree/arena/315aeb7f-my-ai-projects/n8n-clinic-ai-agent
 ```
 
-*(After PR #1 is merged, the case-study link becomes `https://github.com/darkgambit/My_AI_Projects/tree/main/n8n-clinic-ai-agent` — the video/release links never change.)*
+*(Optional prettier watch page: repo **Settings → Pages → Branch: `arena/315aeb7f-my-ai-projects`, folder `/ (root)` → Save** — then `https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html` goes live. After PR #1 is merged, the case-study link becomes `https://github.com/darkgambit/My_AI_Projects/tree/main/n8n-clinic-ai-agent` — the video/release links never change.)*
 
 ---
 

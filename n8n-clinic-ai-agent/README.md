@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| 🎬 **Video walkthrough (66s, Full HD, captioned)** | ▶️ [Watch online](https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html) · [`watch.html`](watch.html) · 📹 [`assets/clinic-ai-agent-workflow-demo.mp4`](assets/clinic-ai-agent-workflow-demo.mp4) + [`captions.en.vtt`](assets/captions.en.vtt) · ☁️ [GitHub Release (permanent video link)](https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v2) |
+| 🎬 **Video walkthrough (66s, Full HD, captioned)** | ▶️ [Watch online](https://raw.githubusercontent.com/darkgambit/My_AI_Projects/clinic-ai-agent-demo-v2/n8n-clinic-ai-agent/assets/clinic-ai-agent-workflow-demo.mp4) · [`watch.html`](watch.html) · 📹 [`assets/clinic-ai-agent-workflow-demo.mp4`](assets/clinic-ai-agent-workflow-demo.mp4) + [`captions.en.vtt`](assets/captions.en.vtt) · ☁️ [GitHub Release (permanent video link)](https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v2) |
 | 🕹️ **Interactive demo** | Open [`demo/index.html`](demo/index.html) in any browser — watch a booking flow through every node (4 scenarios) |
 | 🖼️ **Full workflow screenshot** | [`assets/workflow-overview.png`](assets/workflow-overview.png) |
 | 📥 **Importable workflows** | [`workflows/`](workflows/) — sanitized n8n JSON + export/import guide |
