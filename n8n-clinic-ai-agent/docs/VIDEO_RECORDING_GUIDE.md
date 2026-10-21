@@ -16,7 +16,7 @@ You do **not** need Loom. Pick ONE row — top rows need zero installs:
 
 This repo already contains a finished video tour of your workflows:
 
-- 🎞️ `assets/clinic-ai-agent-workflow-demo.mp4` — 56 seconds, under 1 MB, captions burned in (also plays as the GIF in the README)
+- 🎞️ `assets/clinic-ai-agent-workflow-demo.mp4` — 66 seconds, under 1 MB, captions burned in (also plays as the GIF in the README)
 
 Upload that file to YouTube as **Unlisted** (steps at the bottom) and paste the link in your application.
 It's honest B-roll of your architecture — but a live recording (Option 1) is stronger proof, so do that when you have 15 minutes.

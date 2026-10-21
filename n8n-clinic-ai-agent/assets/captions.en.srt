@@ -1,39 +1,43 @@
 1
-00:00:00,000 --> 00:00:03,999
-Clinic AI Agent. WhatsApp and Messenger appointment automation, built with n8n, OpenRouter, Google Calendar and Google Sheets.
+00:00:00,000 --> 00:00:02,999
+Clinic AI Agent. WhatsApp and Messenger appointment automation built with n8n.
 
 2
-00:00:03,999 --> 00:00:08,999
-Overview. Two production n8n workflows: the Clinic AI Agent (top) and the Booking sub-workflow it calls as tools (bottom).
+00:00:02,999 --> 00:00:08,999
+Overview. Patients chat on WhatsApp or Messenger. An AI agent books appointments against the live calendar and logs everything in Google Sheets.
 
 3
-00:00:08,999 --> 00:00:14,999
-Step 1 · Message in. A patient messages on WhatsApp or Messenger. Webhooks verify with Meta, acknowledge instantly, and parse each channel's payload.
+00:00:08,999 --> 00:00:15,999
+Step 1 · Message in. Meta webhooks verify, acknowledge instantly (so Meta never times out), then parse each channel's payload into one format.
 
 4
-00:00:14,999 --> 00:00:21,000
-Step 2 · AI agent. One normalized message reaches the Clinic AI Agent: OpenRouter LLM, conversation memory, and six booking tools.
+00:00:15,999 --> 00:00:23,000
+Step 2 · AI agent. The agent remembers the conversation and chooses the right booking tool. It never guesses availability: it asks the booking engine.
 
 5
-00:00:21,000 --> 00:00:27,000
-Step 3 · Tool engine. Every tool calls one sub-workflow. Route by Action branches to clinic info, availability, book, cancel, my bookings, or reschedule.
+00:00:23,000 --> 00:00:29,000
+Step 3 · Tool engine. When Executed by Another Workflow feeds Route by Action: one safe, testable branch per action. Nothing writes data except through here.
 
 6
-00:00:27,000 --> 00:00:33,000
-Step 4 · Real availability. Booking checks live availability first: clinic hours from Google Sheets plus Google Calendar FreeBusy, so a taken slot is never offered.
+00:00:29,000 --> 00:00:36,000
+Step 4 · Real availability. Clinic hours and treatments come from Google Sheets. Busy times come from Google Calendar FreeBusy. Only truly free slots are offered.
 
 7
-00:00:33,000 --> 00:00:39,000
-Step 5 · Book safely. Slot still free? Create the Google Calendar event and append the booking row to Google Sheets. Taken? The patient gets the nearest alternatives.
+00:00:36,000 --> 00:00:43,000
+Step 5 · Book safely. The chosen slot is re-validated at the moment of booking. Free: calendar event plus Sheets row. Taken: nearest alternatives, never an error or a clash.
 
 8
-00:00:39,000 --> 00:00:45,000
-Step 6 · Cancel & reschedule. Cancel and reschedule take the same safe path: find the patient's own booking, validate, then update Calendar and Sheets together.
+00:00:43,000 --> 00:00:49,999
+Step 6 · Cancel & reschedule. Cancel: find the patient's booking, delete the calendar event, mark the row. Reschedule: validate the new slot first, then move both records together.
 
 9
-00:00:45,000 --> 00:00:50,999
-Step 7 · Instant confirmation. The reply is extracted and routed back on the same channel the patient used: Messenger or WhatsApp. Done in seconds, 24/7.
+00:00:49,999 --> 00:00:55,999
+Step 7 · Instant confirmation. Extract Reply, then Which Channel? sends the confirmation by Messenger or WhatsApp: the exact channel the patient used. 24/7, in seconds.
 
 10
-00:00:50,999 --> 00:00:55,999
-Book, reschedule, cancel, check availability and my bookings. Full case study and workflow files on GitHub.
+00:00:55,999 --> 00:01:01,999
+Real canvas. This is the real n8n canvas: Clinic AI Agent on top, booking sub-workflow below. The same node names you just saw, drawn large.
+
+11
+00:01:01,999 --> 00:01:05,999
+Book, reschedule, cancel, check availability and my bookings. Full case study on GitHub.

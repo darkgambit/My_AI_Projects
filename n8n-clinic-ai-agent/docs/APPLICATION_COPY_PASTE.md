@@ -2,14 +2,15 @@
 
 ## ✅ READY TO PASTE NOW (real links, no editing needed)
 
-**If the form asks for ONE link — paste this (video page on GitHub):**
+**If the form asks for ONE link — paste this (online video player page, plays in the browser):**
 ```
-https://github.com/darkgambit/My_AI_Projects/blob/clinic-ai-agent-demo-v1/n8n-clinic-ai-agent/assets/clinic-ai-agent-workflow-demo.mp4
+https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html
 ```
 
 **If you can add text/links — paste this:**
 ```
-Video demo (56s, captioned): https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v1
+Watch the video online (66s, Full HD, captioned): https://darkgambit.github.io/My_AI_Projects/n8n-clinic-ai-agent/watch.html
+Video file / release: https://github.com/darkgambit/My_AI_Projects/releases/tag/clinic-ai-agent-demo-v2
 Full case study + workflows: https://github.com/darkgambit/My_AI_Projects/tree/arena/315aeb7f-my-ai-projects/n8n-clinic-ai-agent
 ```
 
