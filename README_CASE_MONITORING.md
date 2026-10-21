@@ -14,7 +14,8 @@ Opens in Excel 2013 and later, Microsoft 365, LibreOffice Calc, and Google Sheet
 |---|---|
 | **Case Dashboard** | Management view: 12 live KPI cards, six charts (stage, status mix, monthly intake, offense category, caseload per person, barangay) and the ageing legend. Prints on one A3 landscape page. |
 | **Case Register** | The master list. 600 rows, 42 columns: case identity, parties, offense with auto-category, stage, priority, status, outcome, court and docket, assignment, six key dates, custody/bail, an 8-item document checklist, and six auto-calculated measures plus remarks. |
-| **Hearing Calendar** | 300 rows. Log every setting; case title, court and handler are pulled from the register. Each row flags itself as Overdue, Upcoming, Held, Postponed, Cancelled or Cleared. |
+| **Hearing Calendar** | Month-at-a-glance calendar (Sunday to Saturday grid). Pick the month and year in the two gold cells and the whole sheet rebuilds: day cells, the month summary strip and the dated list under the grid. Today is gold, days with hearings are tinted blue, days from the neighbouring months are greyed. |
+| **Hearing Log** | 300 rows of data entry — one row per court setting. Case title, court and handler are pulled from the register. Each row flags itself as Overdue, Upcoming, Held, Postponed, Cancelled or Cleared. This is the sheet the calendar reads. |
 | **Document Compliance** | Per-case roll-up of the checklist: on file, missing, % complete, the exact missing items, remedial action, owner and target date. |
 | **Watchlist** | Auto-ranked top ten longest-running **open** cases, ready for the weekly case conference. |
 | **Analysis** | The formula tables that feed the charts (stage, category, status, monthly intake, court, personnel, barangay, hearing and document totals). |
@@ -43,6 +44,29 @@ red and hearings inside the notice window in gold.
 
 ---
 
+## The month calendar at a glance
+
+Open **Hearing Calendar**. In the gold cells at the top left, pick a **month** from the dropdown and
+type the **year**. Everything on the sheet recalculates immediately:
+
+- the header shows the month, e.g. `OCTOBER 2026`;
+- a summary strip reports the month's settings, how many were held, postponed/reset, and how many are
+  still awaiting a result;
+- the 6-week grid shows the month Sunday to Saturday, with the last days of the previous month and the
+  first days of the next month greyed in for context;
+- each day cell lists the time, case number and hearing type. Two settings show in full; a third and
+  beyond collapse into `+N more` so the cell never becomes unreadable;
+- **today** is filled gold, days that hold a hearing are tinted blue;
+- the dated list under the grid lists every setting of the month in chronological order with court,
+  result and handler, colour-coded by result, and always starts from the 1st of the month.
+
+Nothing on the calendar is typed in by hand: it is driven by the Hearing Log, the month and year
+cells, plus two hidden helper columns on the log (unique day key and in-month rank). The calendar
+prints on one A4 landscape page for the bulletin board.
+
+**Changing the month:** January to December in the dropdown, any year from 2020 to 2100. The
+workbook opens on the current month with the sample data, so October 2026 already shows entries.
+
 ## First-run setup (about 10 minutes)
 
 1. **Lists sheet → Office profile and settings** (lower part of column A): LGU name, province,
@@ -58,7 +82,9 @@ red and hearings inside the notice window in gold.
 ## Daily use
 
 - New case → **Case Register**, first empty row; the grey columns fill themselves.
-- Hearing → **Hearing Calendar**, one row per setting; update the result after the hearing.
+- Hearing → **Hearing Log**, one row per setting; update the result after the hearing.
+- See the month → **Hearing Calendar**: change **MONTH** and **YEAR** in the gold cells at the top.
+  Nothing else is edited on that sheet — it is a live view of the log.
 - Stage moved → change **Case Stage** and set **Stage since** to that date (resets the ageing clock).
 - Documents → mark **Y / N / N/A** in the register; work the **Document Compliance** follow-ups.
 - Case closed → set status **Closed**, choose the **Outcome**, enter **Date closed**.

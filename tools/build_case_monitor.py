@@ -870,6 +870,8 @@ reg_name("RegCustody", "custody")
 reg_name("RegRankKey", "key_rank")
 reg_name("RegFiled", "filed")
 
+# (hearing-log defined names are registered after that sheet is built)
+
 # ================================================================ ANALYSIS (chart data)
 wsA = wb.create_sheet("Analysis")
 wsA.sheet_properties.tabColor = MUTED
@@ -941,13 +943,13 @@ BRG_A_S, BRG_A_E = ablock(PER_A_E + 3, "CASES BY BARANGAY", "BARANGAY", barangay
 SUM_TOP = BRG_A_E + 3
 wsA.cell(row=SUM_TOP, column=2, value="HEARING AND DOCUMENT TOTALS").font = font(10, True, NAVY)
 summary_rows = [
-    ("Hearings logged", "=COUNTA('Hearing Calendar'!$A$3:$A$302)"),
-    ("Hearings held as scheduled", "=COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Held as Scheduled\")"),
-    ("Hearings postponed / reset", "=COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Postponed - Prosecution\")"
-        "+COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Postponed - Defense\")"
-        "+COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Postponed - Court\")"
-        "+COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Reset\")"),
-    ("Hearings cancelled", "=COUNTIF('Hearing Calendar'!$H$3:$H$302,\"Cancelled\")"),
+    ("Hearings logged", "=COUNTA('Hearing Log'!$A$3:$A$302)"),
+    ("Hearings held as scheduled", "=COUNTIF('Hearing Log'!$H$3:$H$302,\"Held as Scheduled\")"),
+    ("Hearings postponed / reset", "=COUNTIF('Hearing Log'!$H$3:$H$302,\"Postponed - Prosecution\")"
+        "+COUNTIF('Hearing Log'!$H$3:$H$302,\"Postponed - Defense\")"
+        "+COUNTIF('Hearing Log'!$H$3:$H$302,\"Postponed - Court\")"
+        "+COUNTIF('Hearing Log'!$H$3:$H$302,\"Reset\")"),
+    ("Hearings cancelled", "=COUNTIF('Hearing Log'!$H$3:$H$302,\"Cancelled\")"),
     ("Document items marked missing (N)", f"=COUNTIF('Case Register'!{COL['doc1']}{REG_FIRST}:{COL['doc8']}{REG_LAST},\"N\")"),
     ("Document items on file (Y)", f"=COUNTIF('Case Register'!{COL['doc1']}{REG_FIRST}:{COL['doc8']}{REG_LAST},\"Y\")"),
 ]
@@ -1191,7 +1193,7 @@ wsD.add_chart(ch6, "J33")
 wsD.merge_cells("B51:M51")
 wsD["B51"] = ("Legend:  Critical / For follow-up / Monitor ageing is calculated from DAYS IN CURRENT STAGE against the "
               "thresholds on the Lists sheet.  Red hearing dates are already overdue; gold dates fall inside the "
-              "hearing window.  All figures refresh from the Case Register, Hearing Calendar and Document Compliance sheets.")
+              "hearing window.  All figures refresh from the Case Register, Hearing Log and Document Compliance sheets.")
 wsD["B51"].font = font(7.5, False, "7A8699", True)
 wsD["B51"].alignment = valign("left", "top", True)
 wsD.row_dimensions[51].height = 24
@@ -1204,7 +1206,7 @@ wsD.page_setup.fitToHeight = 1
 wsD.print_area = "A1:N52"
 
 # ================================================================ HEARING CALENDAR
-wsH = wb.create_sheet("Hearing Calendar")
+wsH = wb.create_sheet("Hearing Log")
 wsH.sheet_properties.tabColor = TEAL
 wsH.sheet_view.showGridLines = False
 wsH.sheet_view.zoomScale = 90
@@ -1223,12 +1225,14 @@ HCOLS = [
     ("days",     "DAYS FROM TODAY", 11, "autonum"),
     ("flag",     "STATUS", 14, "autoc"),
     ("notes",    "ORDERS / NOTES", 46, "textw"),
+    ("key",      "HELPER KEY", 12, "auto"),
+    ("rank",     "HELPER MONTH RANK", 12, "auto"),
 ]
 HC = {k: get_column_letter(i + 1) for i, (k, *_x) in enumerate(HCOLS)}
 HLAST_COL = get_column_letter(len(HCOLS))
 
 wsH.merge_cells(f"A1:{HLAST_COL}1")
-wsH["A1"] = "HEARING CALENDAR   |   encode every setting, then update the result after each hearing"
+wsH["A1"] = "HEARING LOG   |   one row per court setting - the Hearing Calendar sheet renders these rows as a monthly grid"
 wsH["A1"].font = font(11.5, True, WHITE)
 wsH["A1"].fill = fill(TEAL)
 wsH["A1"].alignment = valign("left", "center", False, 1)
@@ -1334,6 +1338,22 @@ for i, (cn, hd, tm, ht, rs, ns, nt) in enumerate(H_SAMPLES):
         wsH[f"{HC['nextset']}{r}"] = ns
     wsH[f"{HC['notes']}{r}"] = nt
 
+# helper columns: unique day key (date*1000 + running count) and in-month rank
+def putKey(r):
+    wsH[f"{HC['key']}{r}"] = (f'=IF(${HC["hdate"]}{r}="","",'
+                              f'${HC["hdate"]}{r}*1000+COUNTIF(${HC["hdate"]}$3:${HC["hdate"]}{r},${HC["hdate"]}{r}))')
+def putRank(r):
+    d = f"${HC['hdate']}$3:${HC['hdate']}${H_LAST}"
+    wsH[f"{HC['rank']}{r}"] = (
+        f'=IF(${HC["hdate"]}{r}="","",IF(OR(${HC["hdate"]}{r}<CalStart,${HC["hdate"]}{r}>CalEnd),"",'
+        f'SUMPRODUCT(({d}>=CalStart)*({d}<=CalEnd)*(({d}<${HC["hdate"]}{r})+({d}=${HC["hdate"]}{r})*'
+        f'(ROW({d})<=ROW())))))')
+for r in range(3, H_LAST + 1):
+    putKey(r); putRank(r)
+for helper in ("key", "rank"):
+    wsH.column_dimensions[HC[helper]].hidden = True
+wsH.print_area = f"A1:{HC['notes']}{H_LAST}"
+
 tblH = Table(displayName="tblHearings", ref=f"A2:{HLAST_COL}{H_LAST}")
 tblH.tableStyleInfo = TableStyleInfo(name="TableStyleLight9", showRowStripes=True,
                                      showColumnStripes=False, showFirstColumn=False, showLastColumn=False)
@@ -1344,6 +1364,286 @@ wsH.page_setup.orientation = "landscape"
 wsH.page_setup.fitToWidth = 1
 wsH.page_setup.fitToHeight = 0
 wsH.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+
+# ================================================================ HEARING CALENDAR (monthly grid view)
+for nm, key in [("HLogDate", "hdate"), ("HLogTime", "htime"), ("HLogType", "htype"),
+                ("HLogCourt", "court"), ("HLogHandler", "handler"), ("HLogResult", "result"),
+                ("HLogNotes", "notes"), ("HLogKey", "key"), ("HLogRank", "rank")]:
+    dn(nm, f"'Hearing Log'!${HC[key]}$3:${HC[key]}${H_LAST}")
+dn("HLogCase", f"'Hearing Log'!$A$3:$A${H_LAST}")
+dn("CalStart", "'Hearing Calendar'!$J$3")
+dn("CalEnd", "'Hearing Calendar'!$J$4")
+
+wsK = wb.create_sheet("Hearing Calendar")
+wsK.sheet_properties.tabColor = NAVY_3
+wsK.sheet_view.showGridLines = False
+wsK.sheet_view.zoomScale = 85
+
+DAYCOLS = ["B", "C", "D", "E", "F", "G", "H"]
+WEEKDAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]
+set_widths(wsK, {"A": 2.5, "B": 19.5, "C": 19.5, "D": 19.5, "E": 19.5,
+                 "F": 19.5, "G": 19.5, "H": 19.5, "I": 2.5, "J": 9})
+wsK.column_dimensions["J"].hidden = True
+
+for r in range(1, 53):
+    for cidx in range(1, 10):
+        wsK.cell(row=r, column=cidx).fill = fill(BG)
+
+# --- helper cells (hidden column J) --------------------------------------
+wsK["J1"] = '=IF($E$3="",YEAR(TODAY()),$E$3)'
+wsK["J2"] = '=IFERROR(MATCH($C$3,$J$10:$J$21,0),MONTH(TODAY()))'
+wsK["J3"] = "=DATE($J$1,$J$2,1)"
+wsK["J4"] = "=EOMONTH($J$3,0)"
+wsK["J5"] = "=WEEKDAY($J$3,1)-1"
+for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July",
+                       "August", "September", "October", "November", "December"]):
+    wsK[f"J{10 + i}"] = m
+for r in list(range(1, 6)):
+    wsK[f"J{r}"].font = font(8, False, "9CA3AF")
+
+# --- title block ---------------------------------------------------------
+wsK.merge_cells("B1:H1")
+wsK["B1"] = "HEARING CALENDAR"
+wsK["B1"].font = font(15, True, WHITE)
+wsK["B1"].fill = fill(NAVY)
+wsK["B1"].alignment = valign("left", "center", False, 1)
+for c in DAYCOLS:
+    wsK[f"{c}1"].fill = fill(NAVY)
+wsK.row_dimensions[1].height = 34
+
+wsK.merge_cells("B2:H2")
+wsK["B2"] = ("Change the month and year in the gold cells - the grid, the day entries and the month list below "
+             "rebuild automatically. Hearings are encoded on the Hearing Log sheet.")
+wsK["B2"].font = font(8.5, False, MUTED, True)
+wsK["B2"].alignment = valign("left", "center", False, 1)
+for c in DAYCOLS:
+    wsK[f"{c}2"].fill = fill(BG)
+wsK.row_dimensions[2].height = 20
+
+# --- controls ------------------------------------------------------------
+wsK.row_dimensions[3].height = 34
+wsK["B3"] = "MONTH"
+wsK["B3"].font = font(8, True, MUTED)
+wsK["B3"].alignment = valign("right", "center", False, 1)
+wsK["B3"].fill = fill(BG)
+
+wsK["C3"] = "October"
+wsK["C3"].font = font(11, True, NAVY)
+wsK["C3"].fill = fill(GOLD_L)
+wsK["C3"].alignment = valign("center", "center")
+wsK["C3"].border = box(GOLD, "medium")
+
+wsK["D3"] = "YEAR"
+wsK["D3"].font = font(8, True, MUTED)
+wsK["D3"].alignment = valign("right", "center", False, 1)
+wsK["D3"].fill = fill(BG)
+
+wsK["E3"] = 2026
+wsK["E3"].font = font(11, True, NAVY)
+wsK["E3"].fill = fill(GOLD_L)
+wsK["E3"].alignment = valign("center", "center")
+wsK["E3"].border = box(GOLD, "medium")
+wsK["E3"].number_format = "0"
+
+wsK.merge_cells("F3:H3")
+wsK["F3"] = '=UPPER(TEXT($J$3,"mmmm yyyy"))'
+wsK["F3"].font = font(17, True, NAVY)
+wsK["F3"].alignment = valign("right", "center", False, 1)
+wsK["F3"].fill = fill(BG)
+
+dv_month = DataValidation(
+    type="list",
+    formula1='"January,February,March,April,May,June,July,August,September,October,November,December"',
+    allow_blank=False, showErrorMessage=True)
+dv_month.errorTitle = "Pick a month"
+dv_month.error = "Choose a month from the dropdown list."
+dv_month.promptTitle = "Month"
+dv_month.prompt = "Pick the month you want to display."
+dv_month.showInputMessage = True
+wsK.add_data_validation(dv_month)
+dv_month.add("C3")
+
+dv_year = DataValidation(type="whole", operator="between", formula1="2020", formula2="2100",
+                         allow_blank=False, showErrorMessage=True)
+dv_year.errorTitle = "Check the year"
+dv_year.error = "Enter a four-digit year between 2020 and 2100."
+dv_year.promptTitle = "Year"
+dv_year.prompt = "Type the year you want to display, e.g. 2026."
+dv_year.showInputMessage = True
+wsK.add_data_validation(dv_year)
+dv_year.add("E3")
+
+# --- month summary strip -------------------------------------------------
+IN_MONTH = 'HLogDate,">="&$J$3,HLogDate,"<="&$J$4'
+C_ALL = "COUNTIFS(" + IN_MONTH + ")"
+C_HELD = 'COUNTIFS(' + IN_MONTH + ',HLogResult,"Held as Scheduled")'
+C_POST = ('(COUNTIFS(' + IN_MONTH + ',HLogResult,"Postponed - Prosecution")'
+          '+COUNTIFS(' + IN_MONTH + ',HLogResult,"Postponed - Defense")'
+          '+COUNTIFS(' + IN_MONTH + ',HLogResult,"Postponed - Court")'
+          '+COUNTIFS(' + IN_MONTH + ',HLogResult,"Reset"))')
+C_WAIT = 'COUNTIFS(' + IN_MONTH + ',HLogResult,"")'
+summary = ('="THIS MONTH:  "&' + C_ALL + '&" settings"'
+           '&"     |     held:  "&' + C_HELD +
+           '&"     |     postponed / reset:  "&' + C_POST +
+           '&"     |     awaiting result:  "&' + C_WAIT)
+wsK.merge_cells("B5:H5")
+wsK["B5"] = summary
+wsK["B5"].font = font(9, True, NAVY)
+wsK["B5"].fill = fill(GOLD_L)
+wsK["B5"].alignment = valign("left", "center", False, 1)
+wsK["B5"].border = Border(left=Side(style="medium", color=GOLD), right=Side(style="medium", color=GOLD),
+                          top=Side(style="thin", color=GOLD), bottom=Side(style="thin", color=GOLD))
+wsK.row_dimensions[5].height = 24
+
+# --- weekday header ------------------------------------------------------
+wsK.row_dimensions[6].height = 24
+for i, c in enumerate(DAYCOLS):
+    cell = wsK[f"{c}6"]
+    cell.value = WEEKDAYS[i]
+    cell.font = font(8.5, True, WHITE)
+    cell.fill = fill(NAVY_4 if i in (0, 6) else NAVY_3)
+    cell.alignment = valign("center", "center")
+    cell.border = Border(left=Side(style="thin", color=WHITE), right=Side(style="thin", color=WHITE),
+                         top=Side(style="thin", color=WHITE), bottom=Side(style="thin", color=WHITE))
+
+# --- the 6 week bands ----------------------------------------------------
+def slot_expr(dref, k, col_letter, date_row):
+    m = f"MATCH(${col_letter}${date_row}*1000+{k},HLogKey,0)"
+    return f'INDEX(HLogTime,{m})&"  "&INDEX(HLogCase,{m})&"  "&INDEX(HLogType,{m})'
+
+for w in range(6):
+    drow = 7 + w * 2
+    crow = drow + 1
+    wsK.row_dimensions[drow].height = 20
+    wsK.row_dimensions[crow].height = 56
+    for i, c in enumerate(DAYCOLS):
+        # date cell
+        dc = wsK[f"{c}{drow}"]
+        dc.value = f"=$J$3-$J$5+{w * 7 + i}"
+        dc.number_format = "[=1]d mmm;d"
+        dc.font = font(9, True, NAVY)
+        dc.alignment = valign("right", "top", False, 1)
+        dc.border = Border(left=side("thin", "DDE5EE"), right=side("thin", "DDE5EE"),
+                           top=side("thin", "DDE5EE"), bottom=None)
+        # content cell
+        cc = wsK[f"{c}{crow}"]
+        dref = f"${c}${drow}"
+        cnt = f"COUNTIF(HLogDate,{dref})"
+        cc.value = (f'=IF({cnt}=0,"",IFERROR({slot_expr(dref, 1, c, drow)},"")'
+                    f'&IF({cnt}>1,CHAR(10)&IFERROR({slot_expr(dref, 2, c, drow)},""),"")'
+                    f'&IF({cnt}>2,CHAR(10)&"+"&({cnt}-2)&" more",""))')
+        cc.font = font(7.5, False, "334155")
+        cc.alignment = valign("left", "top", True, 1)
+        cc.border = Border(left=side("thin", "DDE5EE"), right=side("thin", "DDE5EE"),
+                           top=None, bottom=side("thin", "DDE5EE"))
+
+# conditional formatting on the grid
+for w in range(6):
+    drow = 7 + w * 2
+    crow = drow + 1
+    drng = f"B{drow}:H{drow}"
+    crng = f"B{crow}:H{crow}"
+    wsK.conditional_formatting.add(drng, FormulaRule(formula=[f"B{drow}=TODAY()"], stopIfTrue=True,
+        fill=fill(GOLD), font=font(9, True, WHITE)))
+    wsK.conditional_formatting.add(drng, FormulaRule(formula=[f"MONTH(B{drow})<>$J$2"], stopIfTrue=True,
+        fill=fill("F1F4F8"), font=font(9, True, "AEB9C6")))
+    wsK.conditional_formatting.add(drng, FormulaRule(formula=[f"COUNTIF(HLogDate,B{drow})>0"], stopIfTrue=True,
+        fill=fill(BLUE_L), font=font(9, True, BLUE)))
+
+    wsK.conditional_formatting.add(crng, FormulaRule(formula=[f"B${drow}=TODAY()"], stopIfTrue=True,
+        fill=fill("FDF8EA")))
+    wsK.conditional_formatting.add(crng, FormulaRule(formula=[f"MONTH(B${drow})<>$J$2"], stopIfTrue=True,
+        fill=fill("F7F9FB"), font=font(7.5, False, "AEB9C6")))
+    wsK.conditional_formatting.add(crng, FormulaRule(formula=[f"COUNTIF(HLogDate,B${drow})>0"], stopIfTrue=True,
+        fill=fill("F4F8FE"), font=font(7.5, True, NAVY_3)))
+
+# --- month list ----------------------------------------------------------
+wsK.merge_cells("B20:H20")
+wsK["B20"] = "ALL SETTINGS THIS MONTH"
+wsK["B20"].font = font(9.5, True, WHITE)
+wsK["B20"].fill = fill(NAVY_2)
+wsK["B20"].alignment = valign("left", "center", False, 1)
+for c in DAYCOLS:
+    wsK[f"{c}20"].fill = fill(NAVY_2)
+wsK.row_dimensions[20].height = 24
+
+AG_HDR = ["DATE", "TIME", "CASE NO.", "HEARING TYPE", "COURT / FORUM", "RESULT", "HANDLER"]
+wsK.row_dimensions[21].height = 24
+for i, h in enumerate(AG_HDR):
+    cell = wsK.cell(row=21, column=2 + i, value=h)
+    cell.font = font(8, True, NAVY)
+    cell.fill = fill("E9EEF5")
+    cell.alignment = valign("center", "center")
+    cell.border = box("D5DEE8")
+
+AG_FIRST = 22
+AG_LAST = 51
+for r in range(AG_FIRST, AG_LAST + 1):
+    k = r - AG_FIRST + 1
+    wsK.row_dimensions[r].height = 19
+    idx = f"MATCH({k},HLogRank,0)"
+    vals = [
+        f'=IFERROR(INDEX(HLogDate,{idx}),"")',
+        f'=IFERROR(INDEX(HLogTime,{idx}),"")',
+        f'=IFERROR(INDEX(HLogCase,{idx}),"")',
+        f'=IFERROR(INDEX(HLogType,{idx}),"")',
+        f'=IFERROR(INDEX(HLogCourt,{idx}),"")',
+        f'=IFERROR(IF(INDEX(HLogResult,{idx})="","Awaiting result",INDEX(HLogResult,{idx})),"")',
+        f'=IFERROR(INDEX(HLogHandler,{idx}),"")',
+    ]
+    for j, v in enumerate(vals):
+        cell = wsK.cell(row=r, column=2 + j, value=v)
+        cell.border = Border(bottom=side("thin", "E6ECF3"), right=side("thin", "F1F5F9"))
+        cell.font = font(9)
+        cell.alignment = valign("left", "center")
+        cell.fill = fill(WHITE)
+        if j == 0:
+            cell.number_format = "ddd dd mmm yyyy"
+            cell.alignment = valign("center", "center")
+            cell.font = font(9, True, NAVY)
+        elif j == 1:
+            cell.alignment = valign("center", "center")
+        elif j == 2:
+            cell.font = font(9, True, NAVY_3)
+        elif j == 5:
+            cell.alignment = valign("center", "center")
+
+RES_COL = "G"
+wsK.conditional_formatting.add(f"{RES_COL}{AG_FIRST}:{RES_COL}{AG_LAST}",
+    FormulaRule(formula=[f'${RES_COL}{AG_FIRST}="Held as Scheduled"'],
+                fill=fill(GREEN_L), font=font(9, True, GREEN), stopIfTrue=True))
+wsK.conditional_formatting.add(f"{RES_COL}{AG_FIRST}:{RES_COL}{AG_LAST}",
+    FormulaRule(formula=[f'LEFT(${RES_COL}{AG_FIRST},9)="Postponed"'],
+                fill=fill(AMBER_L), font=font(9, True, AMBER), stopIfTrue=True))
+wsK.conditional_formatting.add(f"{RES_COL}{AG_FIRST}:{RES_COL}{AG_LAST}",
+    FormulaRule(formula=[f'${RES_COL}{AG_FIRST}="Reset"'],
+                fill=fill(AMBER_L), font=font(9, True, AMBER), stopIfTrue=True))
+wsK.conditional_formatting.add(f"{RES_COL}{AG_FIRST}:{RES_COL}{AG_LAST}",
+    FormulaRule(formula=[f'${RES_COL}{AG_FIRST}="Cancelled"'],
+                fill=fill("F3F4F6"), font=font(9, True, MUTED), stopIfTrue=True))
+wsK.conditional_formatting.add(f"{RES_COL}{AG_FIRST}:{RES_COL}{AG_LAST}",
+    FormulaRule(formula=[f'${RES_COL}{AG_FIRST}="Awaiting result"'],
+                fill=fill(BLUE_L), font=font(9, True, BLUE), stopIfTrue=True))
+
+wsK.merge_cells("B52:H52")
+wsK["B52"] = ("Each day cell shows the time, case number and hearing type; a hearing that has not been given a "
+              "result yet still appears. The list above shows the first 30 settings of the month - filter the "
+              "Hearing Log for the complete month.")
+wsK["B52"].font = font(7.5, False, "8A94A6", True)
+wsK["B52"].alignment = valign("left", "top", True, 1)
+wsK.row_dimensions[52].height = 22
+
+wsK.print_area = "A1:H52"
+wsK.page_setup.orientation = "landscape"
+wsK.page_setup.paperSize = wsK.PAPERSIZE_A4
+wsK.page_setup.fitToWidth = 1
+wsK.page_setup.fitToHeight = 1
+wsK.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+wsK.print_options.horizontalCentered = True
+wsK.oddFooter.center.text = "Hearing Calendar  |  Prepared by the Case Monitoring Office  |  Page &P of &N"
+wsK.oddFooter.center.size = 8
+wsK.oddFooter.center.color = "808080"
+
 
 # ================================================================ DOCUMENT COMPLIANCE
 for i in range(1, 9):
@@ -1603,10 +1903,11 @@ GUIDE = [
    ("Purpose", "One live record of every criminal case handled or monitored by the LGU: intake, stage, court, "
                "custody, documents, hearings and outcome - with an automatic dashboard, ageing alerts and a "
                "follow-up watchlist."),
-   ("Sheets", "Case Dashboard (management view)  |  Case Register (the master list)  |  Hearing Calendar  |  "
+   ("Sheets", "Case Dashboard (management view)  |  Case Register (the master list)  |  Hearing Calendar "
+              "(monthly grid)  |  Hearing Log (one row per setting)  |  "
               "Document Compliance  |  Watchlist  |  Analysis (chart data)  |  Lists (dropdowns and settings)  |  "
               "User Guide."),
-   ("How the parts connect", "You type only into white cells on the Register, Hearing Calendar and Document "
+   ("How the parts connect", "You type only into white cells on the Register, Hearing Log and Document "
                               "Compliance sheets. Grey cells hold formulas. The dashboard, watchlist and analysis "
                               "tables read from those sheets, so they update the moment you encode or edit a record."),
  ]),
@@ -1631,9 +1932,15 @@ GUIDE = [
  ("3. DAILY OPERATION", [
    ("New case", "Case Register > first empty row. Type the case number (use one consistent format, e.g. CC-2026-0001), "
                 "date recorded, case title, parties, offense, stage, court and handler. Grey columns fill themselves."),
-   ("Logging a hearing", "Hearing Calendar > new row. Pick the case number, enter the hearing date, type and time. "
+   ("Logging a hearing", "Hearing Log > new row. Pick the case number, enter the hearing date, type and time. "
                          "After the hearing, pick the result. The STATUS column turns red if a hearing date passes "
                          "with no result, gold if it falls inside the hearing window, green when held."),
+   ("Reading the month calendar", "Hearing Calendar shows the whole month as a Sunday-to-Saturday grid. Pick the month "
+                                  "and the year in the two gold cells at the top and everything rebuilds: the day cells, the "
+                                  "month total strip and the dated list under the grid. Each day cell shows the time, case "
+                                  "number and hearing type; days with more than two settings show '+N more' and the full "
+                                  "list below carries the court, result and handler. Today's date is filled gold and days "
+                                  "with a hearing are tinted blue. Greyed days belong to the previous or next month."),
    ("Updating a stage", "When a case moves forward, change CASE STAGE and set STAGE SINCE to the date of the change. "
                         "The ageing clock resets automatically."),
    ("Tracking documents", "The Register has a Y / N / N/A checklist for eight core documents. Mark Y when the paper "
@@ -1667,7 +1974,7 @@ GUIDE = [
                                                 "dropdowns copy down automatically."),
    ("One row per case, one row per hearing", "Do not merge cells in the data areas and do not leave blank rows in the "
                                              "middle of the table - filters and counts will skip them."),
-   ("Keep case numbers consistent", "The Hearing Calendar and Document Compliance sheets look cases up by case number. "
+   ("Keep case numbers consistent", "The Hearing Log and Document Compliance sheets look cases up by case number. "
                                     "If a case number is edited in the Register, re-point the related rows."),
    ("Monthly snapshot", "At month end use File > Save As to keep a read-only copy (e.g. CASES-2026-10.xlsx). Keep the "
                         "working file as the live version."),
@@ -1688,7 +1995,7 @@ GUIDE = [
                              "breaks. Restore the block and its items."),
    ("Dashboard shows zero", "Confirm the case rows are inside the table and that CASE NO. is filled in - every "
                             "formula is gated on the case number."),
-   ("#N/A in a hearing row", "The case number typed in the Hearing Calendar does not exist in the Register. Pick it "
+   ("#N/A in a hearing row", "The case number typed in the Hearing Log does not exist in the Register. Pick it "
                              "from the dropdown."),
    ("Chart does not update", "Charts read the Analysis sheet. Press F9 (or Ctrl+Alt+F9) to force a full recalculation."),
  ]),
@@ -1723,13 +2030,13 @@ for title, items in GUIDE:
 
 wsG.merge_cells(f"A{row}:C{row}")
 wsG[f"A{row}"] = ("Prepared for local government case monitoring. Every figure in this workbook is a live formula - "
-                  "if a number looks wrong, check the source rows in the Case Register, Hearing Calendar or "
+                  "if a number looks wrong, check the source rows in the Case Register, Hearing Log or "
                   "Document Compliance sheet.")
 wsG[f"A{row}"].font = font(8.5, False, MUTED, True)
 wsG[f"A{row}"].alignment = valign("left", "center", True, 1)
 
 # ================================================================ ORDER AND SAVE
-order = ["Case Dashboard", "Case Register", "Hearing Calendar", "Document Compliance",
+order = ["Case Dashboard", "Case Register", "Hearing Calendar", "Hearing Log", "Document Compliance",
          "Watchlist", "Analysis", "Lists", "User Guide"]
 wb._sheets = [wb[name] for name in order]
 wb.active = 0
