@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| 🎬 **Live walkthrough** | ⏳ **[ADD YOUR LOOM LINK HERE]** — see [`docs/LOOM_RECORDING_GUIDE.md`](docs/LOOM_RECORDING_GUIDE.md) (90-second script included) |
+| 🎬 **Live walkthrough** | ⏳ **[ADD YOUR VIDEO LINK HERE]** — see [`docs/VIDEO_RECORDING_GUIDE.md`](docs/VIDEO_RECORDING_GUIDE.md) (90-second script included) |
 | 🕹️ **Interactive demo** | Open [`demo/index.html`](demo/index.html) in any browser — watch a booking flow through every node (4 scenarios) |
 | 🖼️ **Full workflow screenshot** | [`assets/workflow-overview.png`](assets/workflow-overview.png) |
 | 📥 **Importable workflows** | [`workflows/`](workflows/) — sanitized n8n JSON + export/import guide |
@@ -100,7 +100,7 @@ n8n-clinic-ai-agent/
 ├── demo/index.html            ← interactive node-by-node simulation
 ├── workflows/                 ← sanitized n8n JSON + import & sanitize guide
 ├── docs/
-│   ├── LOOM_RECORDING_GUIDE.md   ← 90-sec script to film the REAL system
+│   ├── VIDEO_RECORDING_GUIDE.md  ← 5 Loom-free ways to film the REAL system + script
 │   └── APPLICATION_COPY_PASTE.md ← ready answers for job applications
 └── scripts/make_gif.py
 ```
@@ -110,4 +110,4 @@ n8n-clinic-ai-agent/
 Appointment reminders (scheduled WhatsApp nudge 24 h before) · no-show follow-up flow · multi-doctor calendars · Arabic/English auto-detect reply language · daily bookings digest to the clinic owner.
 
 ---
-*Built with n8n. Demo page and GIF use fictitious patients — the live system is shown in the Loom walkthrough.*
+*Built with n8n. Demo page and GIF use fictitious patients — the live system is shown in the video walkthrough.*

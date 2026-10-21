@@ -78,7 +78,7 @@
   </div>
 </header>
 
-<div class="note">▶ <b>Interactive simulation</b> recreating the live production workflows node-by-node (demo data only — no real patients). For the real system, see the Loom walkthrough + workflow JSON linked in the README.</div>
+<div class="note">▶ <b>Interactive simulation</b> recreating the live production workflows node-by-node (demo data only — no real patients). For the real system, see the video walkthrough + workflow JSON linked in the README.</div>
 
 <div class="controls">
   <button class="scen active" data-s="book">1 · Book appointment</button>
@@ -88,6 +88,19 @@
   <button class="ctl" id="playBtn">⏸ Pause</button>
   <button class="ctl" id="replayBtn">↺ Replay</button>
   <select class="ctl" id="speed"><option value="1">1× speed</option><option value="1.8">Fast</option><option value="0.6">Slow (for recording)</option></select>
+  <button class="ctl" id="recBtn" style="border-color:var(--red)">🔴 Record my screen — no Loom needed</button>
+  <label class="badge" style="cursor:pointer"><input type="checkbox" id="micChk" checked> 🎙️ include my microphone (narration)</label>
+  <span class="badge" id="recTime" style="display:none">● REC 0:00</span>
+</div>
+
+<div class="card" id="recOut" style="display:none;max-width:1280px;margin:0 auto 14px">
+  <h2>🎬 Your recording</h2>
+  <video id="recVideo" controls style="width:100%;max-height:420px;background:#000;border-radius:10px"></video>
+  <p style="font-size:13px;color:var(--sub);margin-top:10px">
+    <a id="recDl" href="#" download="clinic-ai-agent-demo.webm" style="color:var(--wa);font-weight:700">⬇️ Download video (.webm)</a>
+    &nbsp;→ then upload it free to <b style="color:var(--txt)">YouTube (Unlisted)</b> or <b style="color:var(--txt)">Google Drive (anyone with the link)</b> and paste that link in your application.
+    Recording tips &amp; the 90-second spoken script: <a href="../docs/VIDEO_RECORDING_GUIDE.md" style="color:var(--blue)">VIDEO_RECORDING_GUIDE.md</a>
+  </p>
 </div>
 
 <div class="grid">
@@ -130,7 +143,7 @@
   </div>
 </div>
 
-<footer>Architecture, full node inventory &amp; setup: <a href="../README.md">README</a> · Record this page full-screen for a quick portfolio video, or record the live n8n system using <a href="../docs/LOOM_RECORDING_GUIDE.md">the Loom guide</a>.</footer>
+<footer>Architecture, full node inventory &amp; setup: <a href="../README.md">README</a> · Record this page full-screen for a quick portfolio video, or record the live n8n system using <a href="../docs/VIDEO_RECORDING_GUIDE.md">the free video guide (no Loom needed)</a>.</footer>
 
 <script>
 const $=id=>document.getElementById(id);
@@ -215,6 +228,41 @@ document.querySelectorAll('.scen').forEach(b=>b.onclick=()=>{document.querySelec
 $('playBtn').onclick=()=>{playing=!playing;$('playBtn').textContent=playing?'⏸ Pause':'▶ Play';if(playing)schedule();};
 $('replayBtn').onclick=reset;
 $('speed').onchange=e=>{speed=parseFloat(e.target.value);};
+
+/* ---------- Built-in screen recorder (Loom alternative, Chrome/Edge) ---------- */
+let recorder=null,recChunks=[],recStreams=[],recTimer=null,recSecs=0;
+$('recBtn').onclick=async()=>{
+  if(recorder&&recorder.state==='recording'){recorder.stop();return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||typeof MediaRecorder==='undefined'){
+    alert('This browser cannot record the screen. Use Chrome/Edge, or Windows Snipping Tool (Win+Shift+R) — see docs/VIDEO_RECORDING_GUIDE.md');return;}
+  try{
+    const screen=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:true});
+    recStreams=[screen];
+    const tracks=[...screen.getVideoTracks(),...screen.getAudioTracks()];
+    if($('micChk').checked){
+      try{const mic=await navigator.mediaDevices.getUserMedia({audio:true});recStreams.push(mic);tracks.push(...mic.getAudioTracks());}
+      catch(e){alert('Microphone not allowed — recording video only. (Allow mic access to narrate.)');}
+    }
+    const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+    recorder=new MediaRecorder(new MediaStream(tracks),mime?{mimeType:mime}:undefined);
+    recChunks=[];recorder.ondataavailable=e=>{if(e.data.size)recChunks.push(e.data);};
+    recorder.onstop=()=>{
+      recStreams.forEach(s=>s.getTracks().forEach(t=>t.stop()));clearInterval(recTimer);
+      $('recTime').style.display='none';$('recBtn').textContent='🔴 Record my screen — no Loom needed';
+      const isMp4=(recorder.mimeType||'').includes('mp4');
+      const blob=new Blob(recChunks,{type:recorder.mimeType||'video/webm'});
+      const url=URL.createObjectURL(blob);
+      $('recVideo').src=url;const dl=$('recDl');dl.href=url;dl.download='clinic-ai-agent-demo.'+(isMp4?'mp4':'webm');
+      dl.textContent='⬇️ Download video (.'+(isMp4?'mp4':'webm')+', '+(blob.size/1048576).toFixed(1)+' MB)';
+      $('recOut').style.display='block';$('recOut').scrollIntoView({behavior:'smooth'});
+    };
+    screen.getVideoTracks()[0].addEventListener('ended',()=>{if(recorder.state==='recording')recorder.stop();});
+    recorder.start(1000);recSecs=0;$('recTime').style.display='';$('recTime').textContent='● REC 0:00';
+    $('recBtn').textContent='⏹ Stop recording';
+    recTimer=setInterval(()=>{recSecs++;$('recTime').textContent='● REC '+Math.floor(recSecs/60)+':'+String(recSecs%60).padStart(2,'0');},1000);
+  }catch(e){/* user cancelled the share picker */}
+};
+
 reset();
 </script>
 </body>

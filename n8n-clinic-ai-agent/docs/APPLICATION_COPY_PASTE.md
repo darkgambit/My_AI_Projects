@@ -4,7 +4,7 @@ Replace every `[BRACKET]` before sending. Keep the numbers honest — delete any
 
 Replace these once, everywhere:
 - `[GITHUB LINK]` → `https://github.com/darkgambit/My_AI_Projects/tree/main/n8n-clinic-ai-agent` *(after merging the PR; until then use the branch/PR link)*
-- `[LOOM LINK]` → your Loom video URL
+- `[VIDEO LINK]` → your video URL (YouTube Unlisted / Drive — see VIDEO_RECORDING_GUIDE.md)
 - `[YOUR NAME]`, `[X bookings/month]`, `[clinic type/city]` → your real details
 
 ---
@@ -12,11 +12,11 @@ Replace these once, everywhere:
 ## 1) The form field: "Link to proof of an automation you built"
 
 ```
-Live demo (90 sec): [LOOM LINK]
+Live demo (90 sec): [VIDEO LINK]
 Full case study + workflows + animated walkthrough: [GITHUB LINK]
 ```
 
-*If the form allows only ONE link, use the GitHub link — the Loom is linked at the top of that README.*
+*If the form allows only ONE link, use the GitHub link — the video is linked at the top of that README.*
 
 ## 2) Short version (2–3 sentences — cover letters, DMs)
 
@@ -24,7 +24,7 @@ Full case study + workflows + animated walkthrough: [GITHUB LINK]
 I built a Clinic AI Agent in n8n: patients book, reschedule, and cancel appointments
 by chatting on WhatsApp or Messenger. An LLM agent checks live Google Calendar
 availability, prevents double-booking, creates the calendar event, and logs every
-booking in Google Sheets. Live demo: [LOOM LINK] · Case study & workflows: [GITHUB LINK]
+booking in Google Sheets. Live demo: [VIDEO LINK] · Case study & workflows: [GITHUB LINK]
 ```
 
 ## 3) Long version (portfolio / "describe a project" fields)
@@ -47,7 +47,7 @@ Solution: Two production n8n workflows.
 Result: bookings handled 24/7 in seconds, zero double-bookings, every appointment
 traceable in one sheet. [ADD: ≈X bookings/month automated.]
 
-Proof — live demo video: [LOOM LINK]
+Proof — live demo video: [VIDEO LINK]
 Proof — architecture, screenshots, animated walkthrough, workflow files: [GITHUB LINK]
 ```
 
@@ -77,7 +77,7 @@ reschedules and cancellations. I can show you the 90-second live demo."
 
 ## Ranking: what convinces, in order
 
-1. 🎬 **Loom of the live system** — real message → real calendar event (do this first, ~15 min)
+1. 🎬 **Video of the live system** (YouTube Unlisted etc.) — real message → real calendar event (do this first, ~15 min)
 2. 📚 **GitHub case study** — this repo's README (architecture, node inventory, your reasoning)
 3. 🎞️ **Animated GIF + interactive demo** — already in the README; makes the page memorable
 4. 📥 **Sanitized workflow JSON** — lets a technical reviewer import and inspect it
