@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic AI Agent — n8n Workflow Video (66s, Full HD)</title>
+<style>
+  *{box-sizing:border-box;margin:0;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:#141414;color:#f0f0f0;padding:28px 16px}
+  main{max-width:920px;margin:0 auto}
+  h1{font-size:26px} h1 span{color:#ea4c89}
+  p{color:#a8a8a8;margin:8px 0 18px;line-height:1.55;font-size:15px}
+  video{width:100%;border-radius:14px;background:#000;border:1px solid #3a3a3a}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  a.btn{background:#262626;border:1px solid #3a3a3a;color:#f0f0f0;text-decoration:none;padding:11px 16px;border-radius:10px;font-size:14px}
+  a.btn:hover{border-color:#ea4c89} a.primary{background:#ea4c89;border-color:#ea4c89;font-weight:600}
+  . feats{margin-top:18px}
+  li{color:#cfcfcf;margin:6px 0 6px 18px;font-size:14px;line-height:1.5}
+  footer{color:#777;font-size:12.5px;margin-top:22px}
+</style>
+</head>
+<body>
+<main>
+  <h1>🏥 Clinic AI Agent — <span>n8n Appointment Automation</span></h1>
+  <p>66-second Full-HD animated, captioned tour of my two production n8n workflows: patients book, reschedule and cancel clinic appointments on WhatsApp &amp; Messenger while an AI agent checks live Google Calendar availability, prevents double-booking, and logs every booking in Google Sheets.</p>
+
+  <video controls autoplay muted loop playsinline poster="assets/video-poster.jpg">
+    <source src="assets/clinic-ai-agent-workflow-demo.mp4" type="video/mp4">
+    <track kind="captions" src="assets/captions.en.vtt" srclang="en" label="English" default>
+    Your browser cannot play this video — <a href="assets/clinic-ai-agent-workflow-demo.mp4">download the MP4</a>.
+  </video>
+
+  <ul>
+    <li><b>Workflow 1:</b> WhatsApp + Messenger webhooks → Clinic AI Agent (OpenRouter LLM + conversation memory + 6 tools) → reply on the same channel</li>
+    <li><b>Workflow 2:</b> Booking engine — clinic info · availability (Calendar FreeBusy) · book · cancel · my bookings · reschedule, with double-booking protection</li>
+    <li><b>Stack:</b> n8n · OpenRouter · Meta webhooks · Google Calendar · Google Sheets</li>
+  </ul>
+
+  <div class="row">
+    <a class="btn primary" href="assets/clinic-ai-agent-workflow-demo.mp4" download>⬇️ Download video (MP4)</a>
+    <a class="btn" href="demo/index.html">🕹️ Try the interactive demo</a>
+    <a class="btn" href="https://github.com/darkgambit/My_AI_Projects">📚 Full case study on GitHub</a>
+  </div>
+
+  <footer>Captions: English (burned-in + selectable track). Video tour uses the real workflow canvas; patient data in demos is fictitious.</footer>
+</main>
+</body>
+</html>

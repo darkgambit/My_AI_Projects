@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinic AI Agent — n8n Workflow Demo (WhatsApp + Messenger Booking Automation)</title>
+<style>
+  :root{--bg:#141414;--panel:#1e1e1e;--panel2:#262626;--line:#3a3a3a;--txt:#f0f0f0;--sub:#a8a8a8;
+        --pink:#ea4c89;--wa:#25d366;--wa-dark:#075e54;--blue:#4a9eff;--amber:#f5a623;--red:#ff5a5a}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  body{background:var(--bg);color:var(--txt);padding:18px}
+  header{max-width:1280px;margin:0 auto 14px}
+  h1{font-size:26px} h1 span{color:var(--pink)}
+  .tagline{color:var(--sub);margin-top:4px;font-size:14px}
+  .badges{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .badge{border:1px solid var(--line);background:var(--panel);padding:4px 10px;border-radius:20px;font-size:12px;color:var(--sub)}
+  .badge b{color:var(--txt)}
+  .note{max-width:1280px;margin:0 auto 14px;background:#2a2118;border:1px solid #6b4e1f;color:#f5c877;
+        padding:9px 14px;border-radius:10px;font-size:13px}
+  .controls{max-width:1280px;margin:0 auto 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .scen{background:var(--panel2);color:var(--txt);border:1px solid var(--line);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:14px}
+  .scen:hover{border-color:var(--pink)} .scen.active{background:var(--pink);border-color:var(--pink);font-weight:600}
+  .ctl{background:var(--panel);color:var(--txt);border:1px solid var(--line);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+  .ctl:hover{border-color:var(--blue)}
+  select.ctl{padding:9px}
+  .grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:320px 1fr 340px;gap:16px;align-items:start}
+  @media(max-width:1050px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--sub);margin-bottom:12px}
+  /* phone */
+  .phone{background:#0b141a;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+  .phone-head{background:var(--wa-dark);padding:10px 14px;display:flex;align-items:center;gap:10px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--wa);display:flex;align-items:center;justify-content:center;font-weight:700;color:#063}
+  .chat{height:430px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .msg{max-width:82%;padding:8px 11px;border-radius:10px;font-size:13.5px;line-height:1.45;animation:pop .25s ease}
+  .msg.patient{background:#005c4b;align-self:flex-end;border-bottom-right-radius:2px}
+  .msg.agent{background:#1f2c34;align-self:flex-start;border-bottom-left-radius:2px}
+  .msg .tick{color:#53bdeb;font-size:11px;text-align:right}
+  .typing{align-self:flex-start;background:#1f2c34;padding:10px 14px;border-radius:10px;color:var(--sub);font-size:12px}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  /* flow */
+  .flow{display:flex;flex-direction:column;align-items:center}
+  .node{background:var(--panel2);border:2px solid var(--line);border-radius:12px;padding:9px 12px;min-width:230px;text-align:center;transition:all .3s}
+  .node .n{font-weight:600;font-size:13.5px}.node .t{font-size:11px;color:var(--sub)}
+  .node.on{border-color:var(--pink);box-shadow:0 0 18px rgba(234,76,137,.55);background:#33202b;transform:scale(1.04)}
+  .node.done{border-color:var(--wa)}
+  .node.agent{border-style:dashed;min-width:280px;background:#232030}
+  .node.agent.on{border-color:var(--amber);box-shadow:0 0 22px rgba(245,166,35,.5)}
+  .wire{width:2px;height:20px;background:var(--line)}
+  .tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:2px 0}
+  .tool{border:1.5px solid var(--line);border-radius:20px;padding:5px 11px;font-size:11.5px;color:var(--sub);background:var(--panel2);transition:all .3s}
+  .tool.on{border-color:var(--amber);color:var(--txt);box-shadow:0 0 14px rgba(245,166,35,.55);background:#332a18}
+  .tool.done{border-color:var(--wa);color:var(--txt)}
+  /* systems */
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 5px;text-align:left}
+  th{color:var(--sub);font-weight:600}
+  .pill{padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700}
+  .pill.ok{background:#123d27;color:var(--wa)} .pill.bad{background:#3d1717;color:var(--red)}
+  tr.flash td{background:#2e3d2a;animation:pop .4s}
+  .cal-ev{background:#1c2f4a;border-left:3px solid var(--blue);border-radius:6px;padding:7px 10px;margin-bottom:7px;font-size:12.5px}
+  .cal-ev.flash{background:#274a26;border-left-color:var(--wa);animation:pop .4s}
+  .cal-ev.gone{opacity:.45;text-decoration:line-through;border-left-color:var(--red)}
+  .log{background:#0d0d0d;border-radius:10px;padding:11px;font-family:Consolas,monospace;font-size:11.5px;line-height:1.7;height:190px;overflow-y:auto;color:#9fe8b1}
+  .log .k{color:#7cc7ff}.log .w{color:#f5c877}
+  footer{max-width:1280px;margin:16px auto 0;color:var(--sub);font-size:12.5px;text-align:center}
+  footer a{color:var(--blue)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏥 Clinic AI Agent — <span>n8n Appointment Automation</span></h1>
+  <p class="tagline">Patients book, reschedule and cancel clinic appointments by chatting on WhatsApp or Messenger. An AI agent checks live availability, prevents double-booking, and writes to Google Calendar + Google Sheets — no human receptionist needed.</p>
+  <div class="badges">
+    <span class="badge"><b>n8n</b> 2 workflows</span><span class="badge"><b>OpenRouter</b> LLM agent + memory</span>
+    <span class="badge"><b>WhatsApp</b> webhook</span><span class="badge"><b>Messenger</b> webhook</span>
+    <span class="badge"><b>Google Calendar</b> FreeBusy</span><span class="badge"><b>Google Sheets</b> booking log</span>
+  </div>
+</header>
+
+<div class="note">▶ <b>Interactive simulation</b> recreating the live production workflows node-by-node (demo data only — no real patients). For the real system, see the video walkthrough + workflow JSON linked in the README.</div>
+
+<div class="controls">
+  <button class="scen active" data-s="book">1 · Book appointment</button>
+  <button class="scen" data-s="taken">2 · Slot taken → alternative</button>
+  <button class="scen" data-s="resched">3 · Reschedule</button>
+  <button class="scen" data-s="cancel">4 · Cancel</button>
+  <button class="ctl" id="playBtn">⏸ Pause</button>
+  <button class="ctl" id="replayBtn">↺ Replay</button>
+  <select class="ctl" id="speed"><option value="1">1× speed</option><option value="1.8">Fast</option><option value="0.6">Slow (for recording)</option></select>
+  <button class="ctl" id="recBtn" style="border-color:var(--red)">🔴 Record my screen — no Loom needed</button>
+  <label class="badge" style="cursor:pointer"><input type="checkbox" id="micChk" checked> 🎙️ include my microphone (narration)</label>
+  <span class="badge" id="recTime" style="display:none">● REC 0:00</span>
+</div>
+
+<div class="card" id="recOut" style="display:none;max-width:1280px;margin:0 auto 14px">
+  <h2>🎬 Your recording</h2>
+  <video id="recVideo" controls style="width:100%;max-height:420px;background:#000;border-radius:10px"></video>
+  <p style="font-size:13px;color:var(--sub);margin-top:10px">
+    <a id="recDl" href="#" download="clinic-ai-agent-demo.webm" style="color:var(--wa);font-weight:700">⬇️ Download video (.webm)</a>
+    &nbsp;→ then upload it free to <b style="color:var(--txt)">YouTube (Unlisted)</b> or <b style="color:var(--txt)">Google Drive (anyone with the link)</b> and paste that link in your application.
+    Recording tips &amp; the 90-second spoken script: <a href="../docs/VIDEO_RECORDING_GUIDE.md" style="color:var(--blue)">VIDEO_RECORDING_GUIDE.md</a>
+  </p>
+</div>
+
+<div class="grid">
+  <!-- PHONE -->
+  <div class="card"><h2>📱 Patient — WhatsApp</h2>
+    <div class="phone">
+      <div class="phone-head"><div class="avatar">C</div><div><div style="font-weight:600;font-size:14px">Clinic Reception (AI)</div><div style="font-size:11px;color:#bfe9d2">online</div></div></div>
+      <div class="chat" id="chat"></div>
+    </div>
+  </div>
+
+  <!-- FLOW -->
+  <div class="card"><h2>⚙️ n8n execution — Workflow 1 + 2</h2>
+    <div class="flow" id="flow">
+      <div class="node" id="n-webhook"><div class="n">WhatsApp Webhook</div><div class="t">Verify + Ack (200 OK instantly)</div></div><div class="wire"></div>
+      <div class="node" id="n-parse"><div class="n">Parse WhatsApp Message → Parse Message</div><div class="t">Code node · normalize channel payload</div></div><div class="wire"></div>
+      <div class="node agent" id="n-agent"><div class="n">🤖 Clinic AI Agent</div><div class="t">OpenRouter Chat Model · Conversation Memory</div>
+        <div class="tools" style="margin-top:8px">
+          <span class="tool" id="t-info">get_clinic_info</span><span class="tool" id="t-avail">check_availability</span>
+          <span class="tool" id="t-book">book_appointment</span><span class="tool" id="t-my">get_my_bookings</span>
+          <span class="tool" id="t-cancel">cancel_appointment</span><span class="tool" id="t-move">reschedule_appointment</span>
+        </div>
+      </div><div class="wire"></div>
+      <div class="node" id="n-route"><div class="n">Route by Action</div><div class="t">Workflow 2 · Switch — one branch per action</div></div><div class="wire"></div>
+      <div class="node" id="n-sheets"><div class="n">Read Clinic Info / Find Bookings</div><div class="t">Google Sheets · hours, treatments, bookings</div></div><div class="wire"></div>
+      <div class="node" id="n-cal"><div class="n">Check Calendar Slot (FreeBusy)</div><div class="t">Google Calendar · is the slot really free?</div></div><div class="wire"></div>
+      <div class="node" id="n-valid"><div class="n">Validate Slot → Slot Free?</div><div class="t">Code + Switch · double-booking guard</div></div><div class="wire"></div>
+      <div class="node" id="n-write"><div class="n">Create / Update / Delete Calendar Event<br>+ Append / Update Booking Row</div><div class="t">Calendar and Sheets always updated together</div></div><div class="wire"></div>
+      <div class="node" id="n-reply"><div class="n">Extract Reply → Which Channel? → Send WhatsApp Reply</div><div class="t">Confirmation back on the same channel</div></div>
+    </div>
+  </div>
+
+  <!-- SYSTEMS -->
+  <div>
+    <div class="card" style="margin-bottom:16px"><h2>📅 Google Calendar — Clinic</h2><div id="cal"></div></div>
+    <div class="card" style="margin-bottom:16px"><h2>📗 Google Sheets — Bookings</h2>
+      <table><thead><tr><th>Patient</th><th>Treatment</th><th>When</th><th>Status</th></tr></thead><tbody id="sheet"></tbody></table>
+    </div>
+    <div class="card"><h2>🧾 Execution log</h2><div class="log" id="log"></div></div>
+  </div>
+</div>
+
+<footer>Architecture, full node inventory &amp; setup: <a href="../README.md">README</a> · Record this page full-screen for a quick portfolio video, or record the live n8n system using <a href="../docs/VIDEO_RECORDING_GUIDE.md">the free video guide (no Loom needed)</a>.</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let timers=[],playing=true,speed=1,current='book',stepIdx=0,steps=[];
+
+const baseCal=[{id:'c1',txt:'🕘 Tomorrow 09:00 — Sara · Cleaning'},{id:'c2',txt:'🕙 Tomorrow 10:00 — Omar · Check-up'}];
+const baseSheet=[['Sara','Cleaning','Tomorrow 09:00','ok','Confirmed'],['Omar','Check-up','Tomorrow 10:00','ok','Confirmed']];
+
+function renderSystems(calExtra,sheetExtra,flash){
+  $('cal').innerHTML=baseCal.concat(calExtra||[]).map(e=>`<div class="cal-ev ${e.cls||''}">${e.txt}</div>`).join('');
+  $('sheet').innerHTML=baseSheet.concat(sheetExtra||[]).map((r,i)=>`<tr class="${flash&&i>=baseSheet.length?'flash':''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="pill ${r[3]}">${r[4]}</span></td></tr>`).join('');
+}
+function chat(from,text){const d=document.createElement('div');d.className='msg '+from;d.innerHTML=text+(from==='patient'?'<div class="tick">✓✓</div>':'');$('chat').appendChild(d);$('chat').scrollTop=1e6;}
+function typing(on){let t=$('tp');if(on&&!t){t=document.createElement('div');t.className='typing';t.id='tp';t.textContent='Clinic AI is typing…';$('chat').appendChild(t);$('chat').scrollTop=1e6;}if(!on&&t)t.remove();}
+function log(html){const d=document.createElement('div');d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e6;}
+function light(ids,cls){(ids||[]).forEach(id=>{const el=$(id);if(el){el.classList.remove('on');if(cls)el.classList.add(cls);}});}
+function activate(ids){document.querySelectorAll('.on').forEach(e=>{e.classList.remove('on');e.classList.add('done')});(ids||[]).forEach(id=>{const el=$(id);if(el){el.classList.remove('done');el.classList.add('on');}});}
+
+const SCEN={
+book:[
+ {c:['patient','Hi! Do you have any free slot tomorrow morning for a cleaning?'],n:['n-webhook'],l:'<span class="k">[webhook]</span> WhatsApp POST received → Ack 200'},
+ {n:['n-parse'],l:'<span class="k">[parse]</span> sender=+218-91-••• ••42 · text extracted'},
+ {n:['n-agent','t-avail'],l:'<span class="k">[agent]</span> intent=check_availability · tool call → Workflow 2',tp:1},
+ {n:['n-route','n-sheets'],l:'<span class="k">[route]</span> action=check_availability → read clinic hours (Sheets)'},
+ {n:['n-cal','n-valid'],l:'<span class="k">[freebusy]</span> busy: 09:00, 10:00 → free: 11:00, 12:00'},
+ {c:['agent','Hello! 👋 Tomorrow we have <b>11:00</b> and <b>12:00</b> available for Cleaning (45 min). Which one suits you?'],n:['n-reply'],l:'<span class="k">[reply]</span> Which Channel? → whatsapp'},
+ {c:['patient','11:00 please. My name is Ahmed.'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> follow-up · same conversation memory'},
+ {n:['n-agent','t-book'],l:'<span class="k">[agent]</span> intent=book_appointment {patient:"Ahmed", treatment:"Cleaning", start:"tomorrow 11:00"}',tp:1},
+ {n:['n-route','n-cal','n-valid'],l:'<span class="k">[validate]</span> re-check slot 11:00 → <b>FREE</b> ✓'},
+ {n:['n-write'],l:'<span class="k">[write]</span> Create Calendar Event + Append Booking Row',sys:()=>renderSystems([{txt:'🕚 Tomorrow 11:00 — Ahmed · Cleaning',cls:'flash'}],[['Ahmed','Cleaning','Tomorrow 11:00','ok','Confirmed']],true)},
+ {c:['agent','✅ Booked! <b>Ahmed — Cleaning, tomorrow at 11:00.</b> Please arrive 10 minutes early. Reply here any time to reschedule or cancel.'],n:['n-reply'],l:'<span class="k">[done]</span> Booking Confirmed → reply sent · execution ✔ success'},
+],
+taken:[
+ {c:['patient','Can I book tomorrow at 10:00 for a check-up? Name: Laila'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> WhatsApp POST → Ack → Parse'},
+ {n:['n-agent','t-book'],l:'<span class="k">[agent]</span> intent=book_appointment {start:"tomorrow 10:00"}',tp:1},
+ {n:['n-route','n-cal','n-valid'],l:'<span class="w">[validate]</span> slot 10:00 → <b>TAKEN</b> (Omar) → branch: Booking Slot Taken'},
+ {c:['agent','Sorry Laila, <b>10:00 tomorrow is already taken</b> 🙏 The nearest free slots are <b>11:00</b> and <b>12:00</b>. Would either work?'],n:['n-reply'],l:'<span class="k">[guard]</span> double-booking prevented — no event written'},
+ {c:['patient','OK, 12:00 then'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> patient picks alternative'},
+ {n:['n-agent','t-book','n-cal','n-valid'],l:'<span class="k">[validate]</span> slot 12:00 → FREE ✓',tp:1},
+ {n:['n-write'],l:'<span class="k">[write]</span> Create Calendar Event + Append Booking Row',sys:()=>renderSystems([{txt:'🕛 Tomorrow 12:00 — Laila · Check-up',cls:'flash'}],[['Laila','Check-up','Tomorrow 12:00','ok','Confirmed']],true)},
+ {c:['agent','✅ Done! <b>Laila — Check-up, tomorrow at 12:00.</b> See you then!'],n:['n-reply'],l:'<span class="k">[done]</span> Booking Confirmed · execution ✔ success'},
+],
+resched:[
+ {c:['patient','Hi, I need to move my appointment tomorrow to the afternoon'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> WhatsApp POST → Ack → Parse'},
+ {n:['n-agent','t-my'],l:'<span class="k">[agent]</span> intent=reschedule → first fetch patient bookings',tp:1},
+ {n:['n-route','n-sheets'],l:'<span class="k">[sheets]</span> Find Bookings To Move → 1 found: Omar · 10:00'},
+ {c:['agent','Sure! I found your booking: <b>Check-up tomorrow 10:00</b>. Free afternoon slots: <b>14:00</b> and <b>15:30</b>. Which do you prefer?'],n:['n-reply'],l:'<span class="k">[reply]</span> options sent'},
+ {c:['patient','14:00'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> new slot received'},
+ {n:['n-agent','t-move','n-cal','n-valid'],l:'<span class="k">[validate]</span> Check New Slot 14:00 → FREE ✓ (New Slot Free?)',tp:1},
+ {n:['n-write'],l:'<span class="k">[write]</span> Update Calendar Event + Update Booking Row',sys:()=>renderSystems([{txt:'🕙 Tomorrow 10:00 — Omar · Check-up',cls:'gone'},{txt:'🕑 Tomorrow 14:00 — Omar · Check-up (moved)',cls:'flash'}],[['Omar','Check-up','Tomorrow 14:00','ok','Rescheduled']],true)},
+ {c:['agent','✅ Moved! Your Check-up is now <b>tomorrow at 14:00</b>. The 10:00 slot has been released.'],n:['n-reply'],l:'<span class="k">[done]</span> Reschedule Confirmed · execution ✔ success'},
+],
+cancel:[
+ {c:['patient','Hello, I have to cancel my cleaning tomorrow'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> WhatsApp POST → Ack → Parse'},
+ {n:['n-agent','t-cancel'],l:'<span class="k">[agent]</span> intent=cancel_appointment',tp:1},
+ {n:['n-route','n-sheets'],l:'<span class="k">[sheets]</span> Find Bookings To Cancel → Pick Booking → found: Sara · 09:00'},
+ {c:['agent','I found: <b>Sara — Cleaning, tomorrow 09:00</b>. Shall I cancel it?'],n:['n-reply'],l:'<span class="k">[reply]</span> confirmation asked before deleting'},
+ {c:['patient','Yes please'],n:['n-webhook','n-parse'],l:'<span class="k">[webhook]</span> confirmed by patient'},
+ {n:['n-agent','t-cancel','n-write'],l:'<span class="k">[write]</span> Delete Calendar Event + Mark Booking Cancelled',sys:()=>{renderSystems([{txt:'🕘 Tomorrow 09:00 — Sara · Cleaning',cls:'gone'}],[['Sara','Cleaning','Tomorrow 09:00','bad','Cancelled']],true);}},
+ {c:['agent','✅ Cancelled. Your <b>09:00 Cleaning tomorrow</b> has been removed and the slot released. We hope to see you soon!'],n:['n-reply'],l:'<span class="k">[done]</span> Cancel Confirmed · execution ✔ success'},
+]};
+
+function reset(){
+  timers.forEach(clearTimeout);timers=[];stepIdx=0;steps=SCEN[current];
+  $('chat').innerHTML='';$('log').innerHTML='';
+  document.querySelectorAll('.node,.tool').forEach(e=>e.classList.remove('on','done'));
+  renderSystems(current==='resched'||current==='cancel'?[]:[],[]);
+  log('<span class="k">[n8n]</span> execution started — scenario: '+current);
+  playing=true;$('playBtn').textContent='⏸ Pause';schedule();
+}
+function schedule(){
+  if(!playing||stepIdx>=steps.length)return;
+  const s=steps[stepIdx];
+  timers.push(setTimeout(()=>{
+    if(s.tp)typing(true);
+    activate(s.n); if(s.l)log(s.l); if(s.sys)s.sys();
+    if(s.c){typing(false);chat(s.c[0],s.c[1]);}
+    stepIdx++; schedule();
+  },(s.c?1500:1150)/speed));
+}
+document.querySelectorAll('.scen').forEach(b=>b.onclick=()=>{document.querySelectorAll('.scen').forEach(x=>x.classList.remove('active'));b.classList.add('active');current=b.dataset.s;reset();});
+$('playBtn').onclick=()=>{playing=!playing;$('playBtn').textContent=playing?'⏸ Pause':'▶ Play';if(playing)schedule();};
+$('replayBtn').onclick=reset;
+$('speed').onchange=e=>{speed=parseFloat(e.target.value);};
+
+/* ---------- Built-in screen recorder (Loom alternative, Chrome/Edge) ---------- */
+let recorder=null,recChunks=[],recStreams=[],recTimer=null,recSecs=0;
+$('recBtn').onclick=async()=>{
+  if(recorder&&recorder.state==='recording'){recorder.stop();return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia||typeof MediaRecorder==='undefined'){
+    alert('This browser cannot record the screen. Use Chrome/Edge, or Windows Snipping Tool (Win+Shift+R) — see docs/VIDEO_RECORDING_GUIDE.md');return;}
+  try{
+    const screen=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:true});
+    recStreams=[screen];
+    const tracks=[...screen.getVideoTracks(),...screen.getAudioTracks()];
+    if($('micChk').checked){
+      try{const mic=await navigator.mediaDevices.getUserMedia({audio:true});recStreams.push(mic);tracks.push(...mic.getAudioTracks());}
+      catch(e){alert('Microphone not allowed — recording video only. (Allow mic access to narrate.)');}
+    }
+    const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+    recorder=new MediaRecorder(new MediaStream(tracks),mime?{mimeType:mime}:undefined);
+    recChunks=[];recorder.ondataavailable=e=>{if(e.data.size)recChunks.push(e.data);};
+    recorder.onstop=()=>{
+      recStreams.forEach(s=>s.getTracks().forEach(t=>t.stop()));clearInterval(recTimer);
+      $('recTime').style.display='none';$('recBtn').textContent='🔴 Record my screen — no Loom needed';
+      const isMp4=(recorder.mimeType||'').includes('mp4');
+      const blob=new Blob(recChunks,{type:recorder.mimeType||'video/webm'});
+      const url=URL.createObjectURL(blob);
+      $('recVideo').src=url;const dl=$('recDl');dl.href=url;dl.download='clinic-ai-agent-demo.'+(isMp4?'mp4':'webm');
+      dl.textContent='⬇️ Download video (.'+(isMp4?'mp4':'webm')+', '+(blob.size/1048576).toFixed(1)+' MB)';
+      $('recOut').style.display='block';$('recOut').scrollIntoView({behavior:'smooth'});
+    };
+    screen.getVideoTracks()[0].addEventListener('ended',()=>{if(recorder.state==='recording')recorder.stop();});
+    recorder.start(1000);recSecs=0;$('recTime').style.display='';$('recTime').textContent='● REC 0:00';
+    $('recBtn').textContent='⏹ Stop recording';
+    recTimer=setInterval(()=>{recSecs++;$('recTime').textContent='● REC '+Math.floor(recSecs/60)+':'+String(recSecs%60).padStart(2,'0');},1000);
+  }catch(e){/* user cancelled the share picker */}
+};
+
+reset();
+</script>
+</body>
+</html>

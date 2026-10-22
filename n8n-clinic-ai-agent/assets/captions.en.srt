@@ -1,0 +1,43 @@
+1
+00:00:00,000 --> 00:00:02,999
+Clinic AI Agent. WhatsApp and Messenger appointment automation built with n8n.
+
+2
+00:00:02,999 --> 00:00:08,999
+Overview. Patients chat on WhatsApp or Messenger. An AI agent books appointments against the live calendar and logs everything in Google Sheets.
+
+3
+00:00:08,999 --> 00:00:15,999
+Step 1 · Message in. Meta webhooks verify, acknowledge instantly (so Meta never times out), then parse each channel's payload into one format.
+
+4
+00:00:15,999 --> 00:00:23,000
+Step 2 · AI agent. The agent remembers the conversation and chooses the right booking tool. It never guesses availability: it asks the booking engine.
+
+5
+00:00:23,000 --> 00:00:29,000
+Step 3 · Tool engine. When Executed by Another Workflow feeds Route by Action: one safe, testable branch per action. Nothing writes data except through here.
+
+6
+00:00:29,000 --> 00:00:36,000
+Step 4 · Real availability. Clinic hours and treatments come from Google Sheets. Busy times come from Google Calendar FreeBusy. Only truly free slots are offered.
+
+7
+00:00:36,000 --> 00:00:43,000
+Step 5 · Book safely. The chosen slot is re-validated at the moment of booking. Free: calendar event plus Sheets row. Taken: nearest alternatives, never an error or a clash.
+
+8
+00:00:43,000 --> 00:00:49,999
+Step 6 · Cancel & reschedule. Cancel: find the patient's booking, delete the calendar event, mark the row. Reschedule: validate the new slot first, then move both records together.
+
+9
+00:00:49,999 --> 00:00:55,999
+Step 7 · Instant confirmation. Extract Reply, then Which Channel? sends the confirmation by Messenger or WhatsApp: the exact channel the patient used. 24/7, in seconds.
+
+10
+00:00:55,999 --> 00:01:01,999
+Real canvas. This is the real n8n canvas: Clinic AI Agent on top, booking sub-workflow below. The same node names you just saw, drawn large.
+
+11
+00:01:01,999 --> 00:01:05,999
+Book, reschedule, cancel, check availability and my bookings. Full case study on GitHub.
