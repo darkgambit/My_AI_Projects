@@ -254,8 +254,7 @@ section(S, EXP_R1 - 2, 1, 12,
 table_head(S, EXP_R1 - 1, 1, ["EXPENSE TYPE  (dropdown in Expenses)", "COST GROUP",
                               "WHAT BELONGS HERE"], bg=GREY_L)
 EXP_TYPES = [
-    ("Fuel \u2013 Trip",            "Vehicle",   "Fuel bought per trip (or log fuel in the Trips sheet instead \u2014 not both)"),
-    ("Fuel \u2013 Bulk Purchase",   "Vehicle",   "Liters bought in bulk / delivered to your tank"),
+    ("Fuel \u2013 Bulk Purchase",   "Vehicle",   "ONLY diesel delivered to your own tank in bulk. Per-trip diesel goes in the Trips sheet \u2014 never both"),
     ("Toll & Parking",             "Vehicle",   "RFID load, expressway tolls, parking"),
     ("Repairs & Maintenance",      "Vehicle",   "PMS, mechanic, labour, engine repair"),
     ("Tires & Batteries",          "Vehicle",   "New tires, retread, battery"),
@@ -971,7 +970,7 @@ PL_ROWS = [
     (17, "Other trip costs",                        pl("$T")),
     (18, "Total trip cost",                         '=SUM(Q15:Q17)'),
     (19, "Trip net profit",                         '=Q14-Q18'),
-    (20, "Vehicle running costs (repairs, tires\u2026)", grp("Vehicle")),
+    (20, "Vehicle costs booked in Expenses", grp("Vehicle")),
     (21, "Overhead (rent, office, salaries\u2026)",   grp("Overhead")),
     (22, "Operating profit",                        '=Q19-Q20-Q21'),
     (23, "Loan amortisation paid",                  grp("Financing")),
@@ -1124,6 +1123,22 @@ put(C_, "A40", "previous month fee", font=fnt(8, False, MUTED))
 put(C_, "A41", "previous month trips", font=fnt(8, False, MUTED))
 put(C_, "A42", "previous month tons", font=fnt(8, False, MUTED))
 
+# ---- fuel double-count guard
+put(C_, "X5", "fuel rows wrongly booked in Expenses", font=fnt(8, False, MUTED))
+put(C_, "Y5", '=COUNTIF(' + rng("Expenses", "$B") + ',"*Fuel*Trip*")', fmt='0', font=fnt(9, False, MUTED))
+put(C_, "X6", "bulk fuel booked this month", font=fnt(8, False, MUTED))
+put(C_, "Y6", f'=SUMIFS({EX_F},{EX_B},"Fuel*",{EX_J},$B$3)', fmt=PESO, font=fnt(9, False, MUTED))
+put(C_, "X7", "trip fuel booked this month", font=fnt(8, False, MUTED))
+put(C_, "Y7", f'=SUMIFS({rng("Trips","$R")},{TR_Z},$B$3)', fmt=PESO, font=fnt(9, False, MUTED))
+put(C_, "X8", "guard text", font=fnt(8, False, MUTED))
+msg_a = ('"\u26a0  DOUBLE COUNT RISK \u2014 "&$Y$5&" row(s) in EXPENSES are typed \u2018Fuel \u2013 Trip\u2019. '
+         'Per-trip diesel already comes from the Trips sheet: delete those rows, or retype them as '
+         '\u2018Fuel \u2013 Bulk Purchase\u2019 only if it really was a tank delivery."')
+msg_b = ('"\u2139  Both bulk fuel in Expenses (\u20b1"&ROUND($Y$6,0)&") and trip fuel in Trips (\u20b1"&ROUND($Y$7,0)'
+         '&") are booked this month. That is only correct if they are different liters \u2014 see Read Me \u00a75."')
+put(C_, "Y8", f'=IF($Y$5>0,{msg_a},IF(AND($Y$6>0,$Y$7>0),{msg_b},""))',
+    font=fnt(8, False, RED))
+
 put(C_, "AA1", "MONTH LIST (dropdown)", font=fnt(8, True, MUTED))
 for i in range(M_R2 - M_R1 + 1):
     put(C_, f"AA{2+i}", f"=$A${M_R1+i}", fmt="yyyy-mm-dd", font=fnt(8))
@@ -1185,6 +1200,16 @@ D.row_dimensions[4].height = 30
 
 add_dv(D, MONTH_LIST, "C4", "Reporting month", "Pick a month from the list (this drives the whole dashboard).")
 add_dv(D, TRUCK_LIST, "F4", "Truck filter", "Pick 'All' or one truck.")
+
+# ------------- double-count warning strip (row 5, hidden while everything is clean)
+D.merge_cells("B5:M5")
+w = D["B5"]
+w.value = '=Calc!$Y$8'
+w.font = fnt(9, True, RED)
+w.alignment = al("left", "center", indent=1)
+D.row_dimensions[5].height = 16
+D.conditional_formatting.add("B5:M5",
+    FormulaRule(formula=['LEN($B$5)>0'], fill=fill(RED_L), font=fnt(9, True, RED)))
 
 # ------------- KPI cards
 CARD_ROWS = [7, 11]
@@ -1334,7 +1359,7 @@ PL_NOTE = {
     9: "the base for the crew shares", 10: "driver share of net fee", 11: "helper share of net fee",
     12: "cash given per trip", 13: "driver receipts to pay back", 14: "after crew and reimbursables",
     15: "diesel logged per trip", 16: "expressway + parking", 17: "weighing, grease, tips",
-    18: "", 19: "before truck running costs", 20: "repairs, tires, insurance, LTO, wash",
+    18: "", 19: "before truck running costs", 20: "repairs, tires, insurance, LTO, wash, bulk diesel",
     21: "rent, office salary, utilities, fees", 22: "the operating result",
     23: "principal + interest to all lenders", 24: "money actually left with you",
     25: "cash profit \u00f7 gross fee", 26: "advances are a transfer, not a cost",
@@ -1680,8 +1705,10 @@ rm_body("Operating profit  =  trip profit (all trips in the month)  \u2212  book
 rm_body("NOT costs: cash advances, payroll payouts, reimbursable payouts, owner's draw and asset purchases. They are "
         "money moving between your pocket and your crew \u2014 the real cost was already booked when the trip or the "
         "receipt was logged. They are grouped as TRANSFER / OTHER so they never inflate your expenses.", size=9)
-rm_body("Log fuel and toll per trip in the TRIPS sheet. Use EXPENSES \u2192 \u2018Fuel \u2013 Bulk Purchase\u2019 only when you buy "
-        "in bulk, otherwise you will count the same diesel twice.", size=9, bold=True, color=RED)
+rm_body("FUEL \u2014 one peso, one place.  Per-trip diesel and toll go in the TRIPS sheet (columns FUEL and TOLL). "
+        "EXPENSES only ever takes diesel that was delivered in bulk to your own tank, typed as \u2018Fuel \u2013 Bulk Purchase\u2019. "
+        "There is no \u2018Fuel \u2013 Trip\u2019 expense type any more, precisely so the same liters cannot be counted twice. "
+        "If you ever type fuel into Expenses by hand, the Dashboard shows a red warning above the KPI cards.", size=9, bold=True, color=RED)
 rm_gap()
 
 rm_heading("6 \u00b7 YOUR ROUTINE")
@@ -1730,6 +1757,8 @@ for problem, fix in [
     ("A crew member has no pay", "The name in the trip must match Setup \u00a75 exactly (use the dropdown)."),
     ("A trip shows no allowance", "Blank allowance uses the default in Setup \u00a72 \u2014 type 0 if no allowance was given."),
     ("A cost is missing from the P&L", "Check its COST GROUP: Transfer and Other are deliberately excluded from profit."),
+    ("A red warning about fuel on the Dashboard", "Fuel is booked twice. Per-trip diesel belongs in Trips only; "
+     "Expenses is for bulk tank deliveries. Delete the duplicate rows and the warning disappears."),
     ("A crew member still shows a balance", "The payout or advance must carry that person's name in PAID TO/CREDITOR."),
 ]:
     rm_body(f"\u25aa  {problem}\n     \u2192  {fix}", size=9)

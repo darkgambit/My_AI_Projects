@@ -36,6 +36,15 @@ cash profit   = operating − loan amortisation paid
 Cash advances, payroll/reimbursement payouts, owner's draw and asset buys are classified as
 **Transfer / Other** and never touch profit (they are already counted when the trip or receipt was logged).
 
+### Fuel rule (anti double-count)
+
+* Per-trip diesel → Trips column **FUEL COST** → P&L line **Fuel**.
+* Bulk diesel delivered to your own tank → Expenses → **Fuel – Bulk Purchase** → P&L line
+  **Vehicle costs booked in Expenses**.
+* There is deliberately **no "Fuel – Trip" expense type**. If one is typed anyway, `Expenses!I`
+  shows `CHECK TYPE` and the Dashboard raises a red warning (`Calc!Y5:Y8` guard cells also warn when
+  bulk fuel and trip fuel are both present in the same month).
+
 ## QA performed
 
 * Every formula in the shipped 1,000-row workbook was executed with HyperFormula:
