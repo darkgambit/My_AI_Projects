@@ -41,9 +41,23 @@ Cash advances, payroll/reimbursement payouts, owner's draw and asset buys are cl
 * Per-trip diesel → Trips column **FUEL COST** → P&L line **Fuel**.
 * Bulk diesel delivered to your own tank → Expenses → **Fuel – Bulk Purchase** → P&L line
   **Vehicle costs booked in Expenses**.
-* There is deliberately **no "Fuel – Trip" expense type**. If one is typed anyway, `Expenses!I`
-  shows `CHECK TYPE` and the Dashboard raises a red warning (`Calc!Y5:Y8` guard cells also warn when
-  bulk fuel and trip fuel are both present in the same month).
+* There is deliberately **no "Fuel – Trip" expense type**. If one is typed anyway, the Dashboard raises
+  a red warning (`Calc!Y5:Y10` guard cells also warn when bulk fuel and trip fuel are both present).
+
+### Free typing (no dropdown needed)
+
+`Expenses!B` accepts anything. `Expenses!I` resolves the cost group in two steps:
+
+1. **Exact match** against Setup §6 (so your own wording wins).
+2. **Keyword map** if there is no exact match — e.g. `diesel/krudo/fuel/toll/tire/repair/insurance/lto → Vehicle`,
+   `loan/amortization → Financing`, `advance/payout/release/reimbursement → Transfer`,
+   `rent/upa/sweldo/kuryente/office/bank → Overhead`, `draw/owner/asset → Other`.
+   Unrecognised wording falls back to **Overhead** (never dropped) and is flagged amber (`Expenses!K` = 1),
+   counted in `Calc!Y9` and surfaced as an ℹ note above the KPI cards.
+
+Hidden helper columns `Expenses!J:N` hold month key, unclassified flag, settlement kind (ADV/PAY) and the
+fuel-duplicate flags. Payroll and the crew settlement read the settlement flags, so free-typed
+"cash advance to <name>" / "payout to <name>" still settle correctly.
 
 ## QA performed
 

@@ -250,7 +250,7 @@ for i in range(CREW_SLOTS):
 EXP_R1, EXP_SLOTS = 99, 30
 EXP_R2 = EXP_R1 + EXP_SLOTS - 1
 section(S, EXP_R1 - 2, 1, 12,
-        "6 \u00b7 EXPENSE TYPES  \u2192  COST GROUP  (used by the Dashboard P&L \u2014 keep the group names as they are)")
+        "6 \u00b7 EXPENSE TYPES  \u2192  COST GROUP  (optional: exact wording. Type freely in Expenses \u2014 keep the group names as they are)")
 table_head(S, EXP_R1 - 1, 1, ["EXPENSE TYPE  (dropdown in Expenses)", "COST GROUP",
                               "WHAT BELONGS HERE"], bg=GREY_L)
 EXP_TYPES = [
@@ -404,6 +404,8 @@ def exp_group(group, sum_col="$F"):
 C_ = ws_calc
 TR_Z, TR_C, TR_D, TR_E = rng("Trips", "$Z"), rng("Trips", "$C"), rng("Trips", "$D"), rng("Trips", "$E")
 EX_J, EX_I, EX_D, EX_B, EX_F = rng("Expenses", "$J"), rng("Expenses", "$I"), rng("Expenses", "$D"), rng("Expenses", "$B"), rng("Expenses", "$F")
+EX_K, EX_L, EX_M, EX_N = (rng("Expenses", "$K"), rng("Expenses", "$L"),
+                          rng("Expenses", "$M"), rng("Expenses", "$N"))
 
 M_HDR = 21                                  # section title row; row M_HDR+1 = column headers
 M_R1, M_R2 = M_HDR + 2, M_HDR + 25          # 24 monthly rows: Jan 2026 - Dec 2027
@@ -542,8 +544,8 @@ for i in range(W_R2 - W_R1 + 1):
     put(C_, f"E{r}", f'=IF($A{r}="","",SUMIFS({rng("Trips","$N")},{TR_Z},$B$3,{TR_D},$A{r})+SUMIFS({rng("Trips","$O")},{TR_Z},$B$3,{TR_E},$A{r}))', fmt=PESO, font=fnt(9))
     put(C_, f"F{r}", f'=IF($A{r}="","",SUMIFS({rng("Trips","$P")},{TR_Z},$B$3,{TR_D},$A{r}))', fmt=PESO, font=fnt(9))
     put(C_, f"G{r}", f'=IF($A{r}="","",SUMIFS({rng("Trips","$Q")},{TR_Z},$B$3,{TR_D},$A{r}))', fmt=PESO, font=fnt(9))
-    put(C_, f"H{r}", f'=IF($A{r}="","",SUMIFS({EX_F},{EX_B},"Cash Advance",{EX_J},$B$3,{rng("Expenses","$E")},$A{r}))', fmt=PESO, font=fnt(9))
-    put(C_, f"I{r}", f'=IF($A{r}="","",SUMIFS({EX_F},{EX_B},"Payroll Payout",{EX_J},$B$3,{rng("Expenses","$E")},$A{r}))', fmt=PESO, font=fnt(9))
+    put(C_, f"H{r}", f'=IF($A{r}="","",SUMIFS({EX_F},{EX_L},"ADV",{EX_J},$B$3,{rng("Expenses","$E")},$A{r}))', fmt=PESO, font=fnt(9))
+    put(C_, f"I{r}", f'=IF($A{r}="","",SUMIFS({EX_F},{EX_L},"PAY",{EX_J},$B$3,{rng("Expenses","$E")},$A{r}))', fmt=PESO, font=fnt(9))
     put(C_, f"J{r}", f'=IF($A{r}="","",$E{r}+$F{r}+$G{r}-$H{r}-$I{r})', fmt=PESO, font=fnt(9, True))
 
 # ---------------- expense groups
@@ -703,7 +705,7 @@ T.freeze_panes = "C5"
 T.sheet_view.zoomScale = 90
 
 # ---- dropdowns
-def add_dv(ws, formula, cells, title, msg, allow_blank=True, kind="list", op=None):
+def add_dv(ws, formula, cells, title, msg, allow_blank=True, kind="list", op=None, silent=False):
     if kind == "list":
         dv = DataValidation(type="list", formula1=formula, allow_blank=allow_blank, showDropDown=False)
     else:
@@ -714,8 +716,8 @@ def add_dv(ws, formula, cells, title, msg, allow_blank=True, kind="list", op=Non
     dv.errorStyle = "warning"
     dv.prompt = msg
     dv.promptTitle = title
-    dv.showInputMessage = True
-    dv.showErrorMessage = True
+    dv.showInputMessage = not silent
+    dv.showErrorMessage = not silent
     ws.add_data_validation(dv)
     dv.add(cells)
     return dv
@@ -763,13 +765,18 @@ EXP_COLS = [
     ("F", "AMOUNT",            13, "in",   PESO, ""),
     ("G", "PAYMENT\nMETHOD",   15, "in",   None, "cash / gcash / bank"),
     ("H", "RECEIPT?",          11, "in",   None, "Y or N"),
-    ("I", "COST GROUP",        15, "calc", None, "auto from Setup"),
-    ("J", "",                   1, "hidden", None, ""),
+    ("I", "COST GROUP",        15, "calc", None, "auto from expense type"),
+    ("J", "", 1, "hidden", None, ""),
+    ("K", "", 6, "hidden", None, ""),
+    ("L", "", 6, "hidden", None, ""),
+    ("M", "", 6, "hidden", None, ""),
+    ("N", "", 6, "hidden", None, ""),
 ]
 E_LAST = "I"
 for letter, head, w, kind, fmt, nt in EXP_COLS:
     E.column_dimensions[letter].width = w
-E.column_dimensions["J"].hidden = True
+for _col in ("J", "K", "L", "M", "N"):
+    E.column_dimensions[_col].hidden = True
 
 title_bar(E, E_LAST, "EXPENSES  \u2014  one row per receipt  (fuel, repairs, toll, loans, rent, cash advances)",
           "Do NOT log crew pay here \u2014 the Payroll sheet computes it from Trips. "
@@ -791,6 +798,32 @@ put(E, "B3", f'=COUNT({DATA_R1}:{DATA_R2})&" entries logged"', font=fnt(8.5, Tru
 put(E, "F3", f"=SUM(F{DATA_R1}:F{DATA_R2})", fmt=PESO0, font=fnt(8.5, True, NAVY), bg=GREY_L, align=al("right", indent=1))
 E.row_dimensions[3].height = 18
 
+# --- free-typing friendly classifier: exact Setup match first, then plain-language keywords
+GROUP_RULES = [
+    ("Transfer",  ["advance", "payout", "pay out", "reimburs"]),
+    ("Financing", ["loan", "amort", "installment", "instalment"]),
+    ("Other",     ["draw", "owner", "asset", "capital"]),
+    ("Vehicle",   ["fuel", "diesel", "krudo", "gasolina", "toll", "parking", "repair", "maintenance",
+                   "tire", "tyre", "battery", "oil", "filter", "spare", "insurance", "lto",
+                   "registration", "emission", "wash", "weigh", "tarp"]),
+    ("Overhead",  ["rent", "upa", "salary", "sweldo", "wage", "electric", "kuryente", "water",
+                   "tubig", "internet", "pldt", "meralco", "supplies", "office", "professional",
+                   "accountant", "lawyer", "broker", "bank", "charge", "permit", "bir", "ltfrb",
+                   "misc", "fee"]),
+]
+FALLBACK_GROUP = "Overhead"
+
+def cost_group_formula(r):
+    exact = (f'IF(COUNTIF(Setup!$A${EXP_R1}:$A${EXP_R2},$B{r})>0,'
+             f'IF(INDEX(Setup!$B${EXP_R1}:$B${EXP_R2},MATCH($B{r},Setup!$A${EXP_R1}:$A${EXP_R2},0))="",'
+             f'"{FALLBACK_GROUP}",INDEX(Setup!$B${EXP_R1}:$B${EXP_R2},MATCH($B{r},Setup!$A${EXP_R1}:$A${EXP_R2},0))),')
+    chain = ""
+    for group, words in GROUP_RULES:
+        cond = "+".join([f'ISNUMBER(SEARCH("{w}",$B{r}))' for w in words])
+        chain += f'IF({cond}>0,"{group}",'
+    chain += f'"{FALLBACK_GROUP}"' + ")" * len(GROUP_RULES)
+    return f'=IF($B{r}="","",{exact}{chain}))'
+
 for r in range(DATA_R1, DATA_R2 + 1):
     shade = WHITE if (r - DATA_R1) % 2 == 0 else "FAFBFC"
     for letter, head, w, kind, fmt, nt in EXP_COLS:
@@ -803,19 +836,27 @@ for r in range(DATA_R1, DATA_R2 + 1):
         if fmt:
             c.number_format = fmt
         c.alignment = al("center" if letter in "ADGH" else "left" if letter in "BCE" else "right")
-    E[f"I{r}"] = (f'=IF($B{r}="","",IFERROR(INDEX(Setup!$B${EXP_R1}:$B${EXP_R2},'
-                  f'MATCH($B{r},Setup!$A${EXP_R1}:$A${EXP_R2},0)),"CHECK TYPE"))')
+    E[f"I{r}"] = cost_group_formula(r)
     E[f"J{r}"] = f'=IF($A{r}="","",DATE(YEAR($A{r}),MONTH($A{r}),1))'
+    E[f"K{r}"] = (f'=IF($B{r}="","",IF(COUNTIF(Setup!$A${EXP_R1}:$A${EXP_R2},$B{r})>0,0,1))')
+    E[f"L{r}"] = (f'=IF($B{r}="","",IF(ISNUMBER(SEARCH("advance",$B{r})),"ADV",'
+                  f'IF(OR(ISNUMBER(SEARCH("payout",$B{r})),ISNUMBER(SEARCH("pay out",$B{r})),'
+                  f'ISNUMBER(SEARCH("release",$B{r}))),"PAY","")))')
+    E[f"M{r}"] = (f'=IF($B{r}="","",IF(ISNUMBER(SEARCH("bulk",$B{r})),0,'
+                  f'IF(ISNUMBER(SEARCH("fuel",$B{r}))+ISNUMBER(SEARCH("diesel",$B{r}))'
+                  f'+ISNUMBER(SEARCH("krudo",$B{r}))+ISNUMBER(SEARCH("gasolina",$B{r}))>0,1,0)))')
+    E[f"N{r}"] = (f'=IF($B{r}="","",IF(ISNUMBER(SEARCH("fuel",$B{r}))+ISNUMBER(SEARCH("diesel",$B{r}))'
+                  f'+ISNUMBER(SEARCH("krudo",$B{r}))+ISNUMBER(SEARCH("gasolina",$B{r}))>0,1,0))')
 
 E.freeze_panes = "B5"
 E.sheet_view.zoomScale = 90
-add_dv(E, LST_TYPE, f"B{DATA_R1}:B{DATA_R2}", "Expense type", "Pick a type from Setup \u2192 EXPENSE TYPES.")
-add_dv(E, LST_TRUCK, f"D{DATA_R1}:D{DATA_R2}", "Truck", "Pick a truck, or leave blank for office costs.")
-add_dv(E, LST_METH, f"G{DATA_R1}:G{DATA_R2}", "Payment method", "Pick a payment method.")
-add_dv(E, '"Y,N"', f"H{DATA_R1}:H{DATA_R2}", "Receipt", "Y or N")
-add_dv(E, "0", f"F{DATA_R1}:F{DATA_R2}", "Amount", "Numbers only.", kind="decimal")
+add_dv(E, LST_TYPE, f"B{DATA_R1}:B{DATA_R2}", "Expense type", "Pick or type anything.", silent=True)
+add_dv(E, LST_TRUCK, f"D{DATA_R1}:D{DATA_R2}", "Truck", "Pick a truck, or type.", silent=True)
+add_dv(E, LST_METH, f"G{DATA_R1}:G{DATA_R2}", "Payment method", "Pick or type.", silent=True)
+add_dv(E, '"Y,N"', f"H{DATA_R1}:H{DATA_R2}", "Receipt", "Y or N", silent=True)
+add_dv(E, "0", f"F{DATA_R1}:F{DATA_R2}", "Amount", "Numbers only.", kind="decimal", silent=True)
 E.conditional_formatting.add(f"I{DATA_R1}:I{DATA_R2}",
-    FormulaRule(formula=[f'$I{DATA_R1}="CHECK TYPE"'], fill=fill(RED_L), font=fnt(9.5, True, RED)))
+    FormulaRule(formula=[f'$K{DATA_R1}=1'], fill=fill(AMBER_L), font=fnt(9.5, True, AMBER)))
 E.conditional_formatting.add(f"H{DATA_R1}:H{DATA_R2}",
     FormulaRule(formula=[f'$H{DATA_R1}="N"'], fill=fill(AMBER_L), font=fnt(9.5, True, AMBER)))
 E.auto_filter.ref = f"A4:{E_LAST}{DATA_R2}"
@@ -889,9 +930,9 @@ for mi in range(PAY_MONTHS):
                       f'+SUMIFS({rng("Trips","$O")},{rng("Trips","$Z")},$R{r},{rng("Trips","$E")},$A{r}))')
         P[f"F{r}"] = f'={g2}SUMIFS({rng("Trips","$P")},{rng("Trips","$Z")},$R{r},{rng("Trips","$D")},$A{r}))'
         P[f"G{r}"] = f'={g2}SUMIFS({rng("Trips","$Q")},{rng("Trips","$Z")},$R{r},{rng("Trips","$D")},$A{r}))'
-        P[f"I{r}"] = (f'={guard}IFERROR(1/(1/SUMIFS({EX_F},{EX_B},"Cash Advance",{EX_J},$R{r},'
+        P[f"I{r}"] = (f'={guard}IFERROR(1/(1/SUMIFS({EX_F},{EX_L},"ADV",{EX_J},$R{r},'
                       f'{rng("Expenses","$E")},$A{r})),""))')
-        P[f"J{r}"] = (f'={guard}IFERROR(1/(1/SUMIFS({EX_F},{EX_B},"Payroll Payout",{EX_J},$R{r},'
+        P[f"J{r}"] = (f'={guard}IFERROR(1/(1/SUMIFS({EX_F},{EX_L},"PAY",{EX_J},$R{r},'
                       f'{rng("Expenses","$E")},$A{r})),""))')
         P[f"H{r}"] = (f'=IF(AND($C{r}="",$I{r}="",$J{r}=""),"",N($E{r})+N($F{r})+N($G{r}))')
         P[f"K{r}"] = f'=IF($H{r}="","",N($H{r})-N($I{r})-N($J{r}))'
@@ -1123,20 +1164,26 @@ put(C_, "A40", "previous month fee", font=fnt(8, False, MUTED))
 put(C_, "A41", "previous month trips", font=fnt(8, False, MUTED))
 put(C_, "A42", "previous month tons", font=fnt(8, False, MUTED))
 
-# ---- fuel double-count guard
-put(C_, "X5", "fuel rows wrongly booked in Expenses", font=fnt(8, False, MUTED))
-put(C_, "Y5", '=COUNTIF(' + rng("Expenses", "$B") + ',"*Fuel*Trip*")', fmt='0', font=fnt(9, False, MUTED))
-put(C_, "X6", "bulk fuel booked this month", font=fnt(8, False, MUTED))
-put(C_, "Y6", f'=SUMIFS({EX_F},{EX_B},"Fuel*",{EX_J},$B$3)', fmt=PESO, font=fnt(9, False, MUTED))
+# ---- guards: fuel double count + expense types the workbook had to guess
+put(C_, "X5", "fuel rows typed in Expenses this month (not bulk)", font=fnt(8, False, MUTED))
+put(C_, "Y5", f'=SUMIFS({EX_M},{EX_J},$B$3)', fmt='0', font=fnt(9, False, MUTED))
+put(C_, "X6", "fuel booked in Expenses this month", font=fnt(8, False, MUTED))
+put(C_, "Y6", f'=SUMIFS({EX_F},{EX_N},1,{EX_J},$B$3)', fmt=PESO, font=fnt(9, False, MUTED))
 put(C_, "X7", "trip fuel booked this month", font=fnt(8, False, MUTED))
 put(C_, "Y7", f'=SUMIFS({rng("Trips","$R")},{TR_Z},$B$3)', fmt=PESO, font=fnt(9, False, MUTED))
-put(C_, "X8", "guard text", font=fnt(8, False, MUTED))
-msg_a = ('"\u26a0  DOUBLE COUNT RISK \u2014 "&$Y$5&" row(s) in EXPENSES are typed \u2018Fuel \u2013 Trip\u2019. '
-         'Per-trip diesel already comes from the Trips sheet: delete those rows, or retype them as '
-         '\u2018Fuel \u2013 Bulk Purchase\u2019 only if it really was a tank delivery."')
+put(C_, "X8", "expense rows auto-classified this month", font=fnt(8, False, MUTED))
+put(C_, "Y9", f'=SUMIFS({EX_K},{EX_J},$B$3)', fmt='0', font=fnt(9, False, MUTED))
+put(C_, "X10", "guard text", font=fnt(8, False, MUTED))
+
+msg_a = ('"\u26a0  DOUBLE COUNT RISK \u2014 "&$Y$5&" row(s) in EXPENSES are fuel bought for a specific trip. '
+         'Trip diesel already comes from the Trips sheet: delete those rows, or rename them '
+         '\u2018Fuel \u2013 Bulk Purchase\u2019 if it really was a tank delivery."')
+msg_c = ('"\u2139  "&$Y$9&" expense row(s) this month use a type that is not in Setup \u00a76, so the cost group '
+         'was guessed from the wording. They are counted \u2014 open EXPENSES, check the amber COST GROUP cells, '
+         'and add the exact wording to Setup \u00a76 if you want it filed precisely."')
 msg_b = ('"\u2139  Both bulk fuel in Expenses (\u20b1"&ROUND($Y$6,0)&") and trip fuel in Trips (\u20b1"&ROUND($Y$7,0)'
          '&") are booked this month. That is only correct if they are different liters \u2014 see Read Me \u00a75."')
-put(C_, "Y8", f'=IF($Y$5>0,{msg_a},IF(AND($Y$6>0,$Y$7>0),{msg_b},""))',
+put(C_, "Y10", f'=IF($Y$5>0,{msg_a},IF($Y$9>0,{msg_c},IF(AND($Y$6>0,$Y$7>0),{msg_b},"")))',
     font=fnt(8, False, RED))
 
 put(C_, "AA1", "MONTH LIST (dropdown)", font=fnt(8, True, MUTED))
@@ -1204,12 +1251,16 @@ add_dv(D, TRUCK_LIST, "F4", "Truck filter", "Pick 'All' or one truck.")
 # ------------- double-count warning strip (row 5, hidden while everything is clean)
 D.merge_cells("B5:M5")
 w = D["B5"]
-w.value = '=Calc!$Y$8'
+w.value = '=Calc!$Y$10'
 w.font = fnt(9, True, RED)
 w.alignment = al("left", "center", indent=1)
 D.row_dimensions[5].height = 16
 D.conditional_formatting.add("B5:M5",
-    FormulaRule(formula=['LEN($B$5)>0'], fill=fill(RED_L), font=fnt(9, True, RED)))
+    FormulaRule(formula=['LEFT($B$5,1)="\u26a0"'], fill=fill(RED_L), font=fnt(9, True, RED)))
+D.conditional_formatting.add("B5:M5",
+    FormulaRule(formula=['LEFT($B$5,1)="\u2139"'], fill=fill(AMBER_L), font=fnt(9, True, AMBER)))
+D.conditional_formatting.add("B5:M5",
+    FormulaRule(formula=['LEN($B$5)=0'], font=fnt(9, True, WHITE)))
 
 # ------------- KPI cards
 CARD_ROWS = [7, 11]
@@ -1662,8 +1713,12 @@ rm_gap()
 rm_heading("2 \u00b7 THE THREE RULES")
 rm_body("\u2460  SETUP is filled once \u2014 rates, crew, trucks, loans, expense types.\n"
         "\u2461  TRIPS = one row per delivery.  EXPENSES = one row per receipt.\n"
-        "\u2462  Never type a number that the workbook can compute. White columns are yours, grey columns are mine.",
-        bold=False)
+        "\u2462  Never type a number that the workbook can compute. White columns are yours, grey columns are mine.\n"
+        "\u2463  Type in plain words. The dropdowns are only suggestions \u2014 nothing is blocked, and an expense is filed "
+        "by its wording: diesel / krudo / fuel / toll / tire / repair / insurance / lto \u2192 VEHICLE; loan / amortization "
+        "\u2192 FINANCING; advance / payout / release / reimbursement \u2192 TRANSFER (not a cost); rent / upa / sweldo / "
+        "kuryente / office / bank \u2192 OVERHEAD; draw / owner / asset \u2192 OTHER. Anything unrecognised is counted as "
+        "OVERHEAD and shown amber so no peso goes missing.", bold=False)
 rm_gap()
 
 rm_heading("3 \u00b7 THE SHEETS")
@@ -1731,6 +1786,8 @@ for head, txt in [
     ("New destination", "Setup \u00a73 \u2192 add one row: SOURCE, DESTINATION, RATE. Also add the destination to Setup \u00a78 "
                         "so it appears in the ranking. Trips resolves the rate by source + destination; if the lane is "
                         "one-way it still matches on destination alone."),
+    ("Your own expense words", "Just type them \u2014 the keyword map files them automatically. Add the exact wording to "
+                                "Setup \u00a76 when you want a 100% exact match (it also becomes a dropdown suggestion)."),
     ("New loan", "Setup \u00a77 \u2192 lender, truck, principal, rate, monthly amortisation, term, start date. Payments are "
                  "counted from the Expenses sheet the moment you log them as \u2018Loan Payment\u2019 with that lender in PAID TO."),
     ("New year", "Copy the last month block on the Payroll sheet and change the hidden month key in column R. "
@@ -1753,7 +1810,8 @@ rm_heading("9 \u00b7 IF SOMETHING LOOKS WRONG")
 for problem, fix in [
     ("\u2018NO RATE\u2019 in the RATE / TON column", "That destination is not in Setup \u00a73, or the spelling differs. "
      "Pick the destination from the dropdown, or add the lane to the rate table."),
-    ("\u2018CHECK TYPE\u2019 in the COST GROUP column", "The expense type is not in Setup \u00a76. Pick from the dropdown."),
+    ("A COST GROUP cell is amber", "That expense type is not listed in Setup \u00a76, so the group was guessed from the "
+     "wording (it is still counted). Add the exact wording to Setup \u00a76 to file it precisely."),
     ("A crew member has no pay", "The name in the trip must match Setup \u00a75 exactly (use the dropdown)."),
     ("A trip shows no allowance", "Blank allowance uses the default in Setup \u00a72 \u2014 type 0 if no allowance was given."),
     ("A cost is missing from the P&L", "Check its COST GROUP: Transfer and Other are deliberately excluded from profit."),
