@@ -20,7 +20,7 @@ Open **http://127.0.0.1:5000**. On macOS/Linux, supply your own folder path. Omi
 
 ## Search and result format
 
-1. Choose folder files or upload Excel workbooks (100 MB total maximum).
+1. Click **Folder files → Choose folder…** to select a folder on your computer (subfolders included), or use the configured startup folder listed below the button. Alternatively upload individual Excel workbooks. Folder selection uses the browser folder picker (Chrome or Edge recommended); selected files are sent to the running app for each search, with a 100 MB total maximum. Open the app at http://127.0.0.1:5000 after starting Python, not by double-clicking the HTML template.
 2. Enter one name per line. A row matching any entered name is returned once.
 3. Select **Contains** (partial name) or **Exact cell match**. Both ignore case, normalize Unicode, and collapse whitespace. Search is literal, not fuzzy.
 4. Set the header row. Default 1 treats the first row of every sheet as column labels. Rows up to and including that row are skipped; use 0 to search every row with column-letter labels.
