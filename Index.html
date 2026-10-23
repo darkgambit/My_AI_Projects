@@ -4086,17 +4086,66 @@ window.IFAR_NA = (function () {
   var SPACING_DENSITY = { '1.1 x 0.5': 18000, '1.0 x 0.5': 20000 };
   function spacingDensity(v) { var key = String(v||'').trim().toLowerCase().replace(/×/g, 'x').replace(/\s+/g, ' '); if (Object.prototype.hasOwnProperty.call(SPACING_DENSITY, key)) return SPACING_DENSITY[key]; var m = /([0-9]*\.?[0-9]+)\s*x\s*([0-9]*\.?[0-9]+)/.exec(key); if (!m) return NaN; var a = parseFloat(m[1]), b = parseFloat(m[2]); if (!(a > 0) || !(b > 0)) return NaN; return Math.round((10000 / (a * b)) / 1000) * 1000; }
   
-  function recalcVolRow(tr) { 
+  function recalcVolRow(tr) {
     var naToggle = tr.querySelector('[data-na-toggle]');
     if (naToggle && naToggle.checked) return;
-    var ts=0, any=false; ['sRob', 'sDis', 'sCult', 'sWeath'].forEach(function (k) { var inp = tr.querySelector('[data-k="' + k + '"]'); if (inp && String(inp.value).trim() !== '') { any = true; var v = parseFloat(inp.value); if (!isNaN(v)) ts += v; } }); var tsc = tr.querySelector('.totalScore'); if (tsc) { tsc.textContent = any ? String(Math.round(ts*100)/100) : '0'; tsc.classList.toggle('tot-hot', any && ts > 0); }
-    if (tr.id === 'vol1' || tr.id === 'vol2') {
-      var plotIdx = tr.id === 'vol1' ? 0 : 1; var cb = document.getElementById('tblCBody'); var spRow = cb && cb.rows[plotIdx] ? cb.rows[plotIdx] : null; var spSel = spRow ? spRow.querySelector('[data-k="spacing"]') : null; var plantInp = tr.querySelector('[data-k="plant"]'); var areaInp = tr.querySelector('[data-k="area"]'); var yldInp = tr.querySelector('[data-k="yld"]'); var plant = parseFloat(plantInp ? plantInp.value : ''); var dens = spacingDensity(spSel ? spSel.value : '');
-      if (areaInp) areaInp.value = (!isNaN(plant) && !isNaN(dens) && dens > 0) ? String(Math.round((plant / dens) * 100) / 100) : '';
-      if (tr.id === 'vol2') { var yld1Row = document.getElementById('vol1'); var yld1Inp = yld1Row ? yld1Row.querySelector('[data-k="yld"]') : null; var yld1 = yld1Inp ? parseFloat(yld1Inp.value) : NaN; if (yldInp) yldInp.value = (any && !isNaN(yld1)) ? String(Math.round(ts * yld1) / 100) : ''; }
-      var area = parseFloat(areaInp ? areaInp.value : ''); var yld = parseFloat(yldInp ? yldInp.value : ''); var vol = tr.querySelector('[data-k="volume"]'); if (vol) vol.value = (!isNaN(area) && !isNaN(yld)) ? String(Math.round(area * yld)) : '';
+
+    var ts = 0, any = false;
+    ['sRob', 'sDis', 'sCult', 'sWeath'].forEach(function (k) {
+      var inp = tr.querySelector('[data-k="' + k + '"]');
+      if (inp && String(inp.value).trim() !== '') {
+        any = true;
+        var v = parseFloat(inp.value);
+        if (!isNaN(v)) ts += v;
+      }
+    });
+    var tsc = tr.querySelector('.totalScore');
+    if (tsc) {
+      tsc.textContent = any ? String(Math.round(ts * 100) / 100) : '0';
+      tsc.classList.toggle('tot-hot', any && ts > 0);
     }
-    if (tr.id === 'vol3') { var ve = parseFloat(tr.querySelector('[data-k="volEst"]').value); var sv = parseFloat(tr.querySelector('[data-k="salvage"]').value); var t3 = tr.querySelector('.t3v'); var any3 = !isNaN(ve) || !isNaN(sv); t3.textContent = any3 ? String(Math.round(((isNaN(ve) ? 0 : ve) + (isNaN(sv) ? 0 : sv))*100)/100) : '0'; t3.classList.toggle('tot-hot', any3); }
+
+    if (tr.id === 'vol1' || tr.id === 'vol2') {
+      var areaInp = tr.querySelector('[data-k="area"]');
+      var yldInp = tr.querySelector('[data-k="yld"]');
+
+      if (tr.id === 'vol1') {
+        /* 1st Volume: effective area = plant count / P1 spacing density. */
+        var cb = document.getElementById('tblCBody');
+        var spRow = cb && cb.rows[0] ? cb.rows[0] : null;
+        var spSel = spRow ? spRow.querySelector('[data-k="spacing"]') : null;
+        var plantInp = tr.querySelector('[data-k="plant"]');
+        var plant = parseFloat(plantInp ? plantInp.value : '');
+        var dens = spacingDensity(spSel ? spSel.value : '');
+        if (areaInp) {
+          areaInp.value = (!isNaN(plant) && !isNaN(dens) && dens > 0)
+            ? String(Math.round((plant / dens) * 100) / 100) : '';
+        }
+      } else {
+        /* 2nd Volume locks plant count and area. Carry forward the 1st Volume
+           area; its hidden plant input is blank and must not be used here. */
+        var firstRow = document.getElementById('vol1');
+        var firstAreaInp = firstRow ? firstRow.querySelector('[data-k="area"]') : null;
+        var yld1Inp = firstRow ? firstRow.querySelector('[data-k="yld"]') : null;
+        var yld1 = yld1Inp ? parseFloat(yld1Inp.value) : NaN;
+        if (areaInp) areaInp.value = firstAreaInp ? firstAreaInp.value : '';
+        if (yldInp) yldInp.value = (any && !isNaN(yld1)) ? String(Math.round(ts * yld1) / 100) : '';
+      }
+
+      var area = parseFloat(areaInp ? areaInp.value : '');
+      var yld = parseFloat(yldInp ? yldInp.value : '');
+      var vol = tr.querySelector('[data-k="volume"]');
+      if (vol) vol.value = (!isNaN(area) && !isNaN(yld)) ? String(Math.round(area * yld)) : '';
+    }
+
+    if (tr.id === 'vol3') {
+      var ve = parseFloat(tr.querySelector('[data-k="volEst"]').value);
+      var sv = parseFloat(tr.querySelector('[data-k="salvage"]').value);
+      var t3 = tr.querySelector('.t3v');
+      var any3 = !isNaN(ve) || !isNaN(sv);
+      t3.textContent = any3 ? String(Math.round(((isNaN(ve) ? 0 : ve) + (isNaN(sv) ? 0 : sv)) * 100) / 100) : '0';
+      t3.classList.toggle('tot-hot', any3);
+    }
     tr.classList.toggle('filled', !rowIsEmpty(tr));
   }
 
