@@ -4070,6 +4070,14 @@ window.IFAR_NA = (function () {
     var second = el('tr'); second.setAttribute('data-i', 1); second.id = 'vol2'; second.appendChild(el('td', 'lab', '2nd Volume'));
     buildBlockedCell(second, D1_FIELDS.slice(0, 2), '', 2);
     D1_FIELDS.slice(2, 8).forEach(function (f) { second.appendChild(buildFieldCell(f)); });
+    /* Estimated Yield for 2nd Volume is calculated from Total Score and the
+       1st Volume yield. It must never accept manual keyboard input. */
+    var secondYield = second.querySelector('[data-k="yld"]');
+    secondYield.classList.add('auto');
+    secondYield.setAttribute('data-auto', '1');
+    secondYield.setAttribute('readonly', 'readonly');
+    secondYield.placeholder = 'auto';
+    secondYield.title = 'Calculated automatically from Total Score and 1st Volume Estimated Yield';
     second.appendChild(el('td', 'total totalScore', '0'));
     second.appendChild(buildFieldCell(D1_FIELDS[8]));
     window.IFAR_NA.add(second, '2nd Volume'); body.appendChild(second);
@@ -4135,7 +4143,10 @@ window.IFAR_NA = (function () {
       var area = parseFloat(areaInp ? areaInp.value : '');
       var yld = parseFloat(yldInp ? yldInp.value : '');
       var vol = tr.querySelector('[data-k="volume"]');
-      if (vol) vol.value = (!isNaN(area) && !isNaN(yld)) ? String(Math.round(area * yld)) : '';
+      if (vol) {
+        vol.value = (!isNaN(area) && !isNaN(yld))
+          ? (Math.round(area * yld * 100) / 100).toFixed(2) : '';
+      }
     }
 
     if (tr.id === 'vol3') {
