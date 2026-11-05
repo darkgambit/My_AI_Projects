@@ -769,14 +769,7 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#5078ac}
           </div>
         </section>
         <section class="card">
-          <div class="sechead"><span class="secletter">G</span><h2>Seedbed Pricking</h2></div>
-          <div class="tblwrap"><table class="grid" id="tblSeedbedPricking"></table></div>
-          <div class="gridfoot">
-            <button id="btnAddSeedbedPricking" type="button" class="btn small navy">＋ Add Row</button>
-          </div>
-        </section>
-        <section class="card">
-          <div class="sechead"><span class="secletter">H</span><h2>Seedling Pulling</h2></div>
+          <div class="sechead"><span class="secletter">G</span><h2>Seedling Pulling</h2></div>
           <div class="tblwrap" style="max-height:260px"><table class="grid" id="tblPull"></table></div>
           <div class="gridfoot" style="border-top:1px solid var(--line); margin-bottom:14px">
             <button id="btnAddPulling" type="button" class="btn small navy">＋ Add Row</button>
@@ -1643,6 +1636,14 @@ window.IFAR_CLOUD_OPTIONS = {
       try { shape = m.collectPane ? m.collectPane() : {}; } catch (e) { shape = {}; }
       if (!shape || typeof shape !== 'object') shape = {};
 
+      /* Seedbed Pricking was removed from the current UI. Reconstruct its three
+         historical rows when reading an old sheet-only record, then preserve
+         them inside FULL_RECORD_JSON on the next save. */
+      if (m.id === 's02') {
+        shape.seedbedPricking = [];
+        while (shape.seedbedPricking.length < 3) shape.seedbedPricking.push({ seedbed: '', n: '' });
+      }
+
       /* Form 04 can have up to twelve recorded plots even though a new form
          starts with two rows. Include all schema blocks during reconstruction. */
       if (m.id === 's04') {
@@ -1725,14 +1726,13 @@ window.IFAR_CLOUD_OPTIONS = {
     if (!blank.s02) blank.s02 = {};
     if (!blank.s03) blank.s03 = {};
     if (!blank.s04) blank.s04 = {};
-    blank.s02.watering = []; blank.s02.weeding = []; blank.s02.pricking = []; blank.s02.seedbedPricking = []; blank.s02.pullings = [];
+    blank.s02.watering = []; blank.s02.weeding = []; blank.s02.pricking = []; blank.s02.pullings = [];
     blank.s03.landPrep = []; blank.s03.hilling = [];
     blank.s04.rounds = [];
     for (var i = 0; i < 6; i++) {
       blank.s02.watering.push({});
       blank.s02.weeding.push({});
       blank.s02.pricking.push({});
-      blank.s02.seedbedPricking.push({});
       blank.s02.pullings.push({});
       blank.s03.landPrep.push({});
       blank.s03.hilling.push({});
@@ -2553,12 +2553,11 @@ window.IFAR_CLOUD_OPTIONS = {
   }
 
   function blankFormReportRecord_() {
-    var blank = { v: 1, fc: '', farmer: '', updatedAt: '', s01: {}, s02: { watering: [], weeding: [], pricking: [], seedbedPricking: [], pullings: [] }, s03: { landPrep: [], hilling: [] }, s04: { rounds: [] } };
+    var blank = { v: 1, fc: '', farmer: '', updatedAt: '', s01: {}, s02: { watering: [], weeding: [], pricking: [], pullings: [] }, s03: { landPrep: [], hilling: [] }, s04: { rounds: [] } };
     for (var i = 0; i < 6; i++) {
       blank.s02.watering.push({});
       blank.s02.weeding.push({});
       blank.s02.pricking.push({});
-      blank.s02.seedbedPricking.push({});
       blank.s02.pullings.push({});
       blank.s03.landPrep.push({});
       blank.s03.hilling.push({});
@@ -3242,17 +3241,26 @@ window.IFAR_NA = (function () {
   var SB_ROWS = ['10-18-24', '21-0-0'];
   var SB_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 126 }, { k: 'qty', label: 'Qty (kg/bags)', xlabel: 'Qty (kg/bags)', t: 'num', w: 100, ph: 'e.g. 4' }, { k: 'unit', label: 'Unit', xlabel: 'Unit', t: 'sel', g: 'unit', w: 90 }, { k: 'remarks', label: 'Remarks', xlabel: 'Remarks', t: 'text', w: 220, ph: 'Remarks…' }];
   var CPA_ROWS = ['1', '2', '3'];
-  var CPA_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'cpa', label: 'CPA Used', xlabel: 'CPA Used', t: 'sel', g: 'cpa', w: 116 }, { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'sel', g: 'dos', w: 100 }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
+  var CPA_FIELDS = [
+    { k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 },
+    { k: 'cpa', label: 'CPA Used', xlabel: 'CPA Used', t: 'sel', g: 'cpa', w: 116 },
+    { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' },
+    { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'sel', g: 'dos', w: 100 },
+    { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }
+  ];
   
   var WW_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
   var PRK_FIELDS = [
     { k: 'date', label: 'Date of Pricking', xlabel: 'Date of Pricking', t: 'date', w: 140 },
     { k: 'n', label: 'No. of Seedlings Pricked', xlabel: 'No. of Seedlings Pricked', t: 'num', w: 160, ph: 'e.g. 5000' }
   ];
+  /* Legacy only: the Seedbed Pricking table was removed from the UI. Keep its
+     field definitions so existing records can be flattened without data loss. */
   var SB_PRK_FIELDS = [
     { k: 'seedbed', label: 'Seedbed', xlabel: 'Seedbed', t: 'text', w: 140, ph: 'e.g. Bed 1' },
     { k: 'n', label: 'No. of Seedling Pricked', xlabel: 'No. of Seedling Pricked', t: 'num', w: 160, ph: 'e.g. 5000' }
   ];
+  var preservedSeedbedPricking = [];
   var PL_FIELDS = [
     { k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 126 },
     { k: 'n', label: 'Number of Seedlings', xlabel: 'No. of Seedlings', t: 'num', w: 130, ph: 'e.g. 25000' },
@@ -3376,25 +3384,6 @@ window.IFAR_NA = (function () {
     return tr;
   }
 
-  function buildSeedbedPrickingRow(n) {
-    var tr = el('tr'); tr.setAttribute('data-i', n - 1);
-    var labTd = el('td', 'lab');
-    var wrap = el('span'); wrap.style.display = 'inline-flex'; wrap.style.alignItems = 'center'; wrap.style.gap = '6px';
-    var name = el('span', 'rname', String(n)); wrap.appendChild(name);
-    if (n > 3) {
-      var del = el('button', 'btn danger icon', '✕'); del.type = 'button';
-      del.title = 'Remove this row';
-      del.addEventListener('click', function () {
-        if (confirm('Remove Seedbed Pricking entry ' + name.textContent + '?')) { tr.remove(); renumberRows('tblSeedbedPrickingBody', 'rname', 1); }
-      });
-      wrap.appendChild(del);
-    }
-    labTd.appendChild(wrap); tr.appendChild(labTd);
-    SB_PRK_FIELDS.forEach(function (f) { tr.appendChild(buildFieldCell(f)); });
-    window.IFAR_NA.add(tr, 'Seedbed Pricking ' + n);
-    return tr;
-  }
-
   function buildPullingRow(n) {
     var tr = el('tr'); tr.setAttribute('data-i', n - 1);
     var labTd = el('td', 'lab');
@@ -3465,7 +3454,6 @@ window.IFAR_NA = (function () {
   var C_KEYS = fieldKeys(CPA_FIELDS);
   var W_KEYS = fieldKeys(WW_FIELDS);
   var PRK_KEYS = PRK_FIELDS.map(function(f){return f.k;});
-  var SB_PRK_KEYS = SB_PRK_FIELDS.map(function(f){return f.k;});
 
   function collectRows(bodyId, keys) { var out = [], elBody = document.getElementById(bodyId); if (!elBody) return out; var rows = elBody.rows; for (var i = 0; i < rows.length; i++) out.push(rowValues(rows[i], keys)); return out; }
   
@@ -3509,7 +3497,7 @@ window.IFAR_NA = (function () {
       watering: collectRows('tblWatBody', W_KEYS),
       pricking: collectRows('tblPrickingBody', PRK_KEYS),
       weeding: collectRows('tblWeedBody', W_KEYS),
-      seedbedPricking: collectRows('tblSeedbedPrickingBody', SB_PRK_KEYS),
+      seedbedPricking: preservedSeedbedPricking.slice(),
       pullings: collectRows('tblPullBody', P_KEYS),
       seedbedDestruction: collectSeedbedDestruction()
     };
@@ -3524,7 +3512,7 @@ window.IFAR_NA = (function () {
     var bWat = document.getElementById('tblWatBody'); if (bWat) { bWat.innerHTML = ''; for (var i = 1; i <= 3; i++) bWat.appendChild(buildWateringRow(i)); }
     var bPrk = document.getElementById('tblPrickingBody'); if (bPrk) { bPrk.innerHTML = ''; for (var i = 1; i <= 3; i++) bPrk.appendChild(buildPrickingRow(i)); }
     var bWeed = document.getElementById('tblWeedBody'); if (bWeed) { bWeed.innerHTML = ''; for (var i = 1; i <= 3; i++) bWeed.appendChild(buildWeedingRow(i)); }
-    var bSbPrk = document.getElementById('tblSeedbedPrickingBody'); if (bSbPrk) { bSbPrk.innerHTML = ''; for (var i = 1; i <= 3; i++) bSbPrk.appendChild(buildSeedbedPrickingRow(i)); }
+    preservedSeedbedPricking = [];
     var bPull = document.getElementById('tblPullBody'); if (bPull) { bPull.innerHTML = ''; for (var i = 1; i <= 2; i++) bPull.appendChild(buildPullingRow(i)); }
 
     var sdRow = document.querySelector('#tblSeedbedDestructionBody tr');
@@ -3532,6 +3520,8 @@ window.IFAR_NA = (function () {
   }
 
   function fillPane(rec) {
+    /* The table is gone, but carry its old values through load -> save. */
+    preservedSeedbedPricking = Array.isArray(rec.seedbedPricking) ? rec.seedbedPricking.slice() : [];
     var s = rec.setup || {};
     S_KEYS.forEach(function (k) {
       if (s[k] !== undefined) {
@@ -3588,17 +3578,6 @@ window.IFAR_NA = (function () {
       }
     }
 
-    // Seedbed Pricking
-    var bSbPrk = document.getElementById('tblSeedbedPrickingBody');
-    if (bSbPrk) {
-      bSbPrk.innerHTML = '';
-      var nSbPrk = Math.max(3, (rec.seedbedPricking || []).length);
-      for (var i = 1; i <= nSbPrk; i++) {
-        var tr = buildSeedbedPrickingRow(i); bSbPrk.appendChild(tr);
-        if (rec.seedbedPricking && rec.seedbedPricking[i - 1]) { setRowValues(tr, rec.seedbedPricking[i - 1], SB_PRK_KEYS); tr.classList.toggle('filled', !rowIsEmpty(tr)); }
-      }
-    }
-
     // Pulling
     var bPull = document.getElementById('tblPullBody');
     if (bPull) {
@@ -3621,7 +3600,8 @@ window.IFAR_NA = (function () {
   }
 
   function flatten(recs) {
-    var maxWat = 3, maxPrk = 3, maxWeed = 3, maxSbPrk = 3, maxPull = 2;
+    /* SBP columns are emitted only when an existing record carries legacy data. */
+    var maxWat = 3, maxPrk = 3, maxWeed = 3, maxSbPrk = 0, maxPull = 2;
     recs.forEach(function (r) {
       maxWat = Math.max(maxWat, (r.watering || []).length);
       maxPrk = Math.max(maxPrk, (r.pricking || []).length);
@@ -3755,12 +3735,6 @@ window.IFAR_NA = (function () {
       if (body) body.appendChild(buildWeedingRow(body.rows.length + 1));
     });
 
-    var bAddSbPrk = document.getElementById('btnAddSeedbedPricking');
-    if (bAddSbPrk) bAddSbPrk.addEventListener('click', function () {
-      var body = document.getElementById('tblSeedbedPrickingBody');
-      if (body) body.appendChild(buildSeedbedPrickingRow(body.rows.length + 1));
-    });
-
     var bAddPull = document.getElementById('btnAddPulling');
     if (bAddPull) bAddPull.addEventListener('click', function () {
       var body = document.getElementById('tblPullBody');
@@ -3776,9 +3750,8 @@ window.IFAR_NA = (function () {
       buildSimpleTable(document.getElementById('tblSb'), SB_ROWS, SB_FIELDS, 'Fertilizer', 96);
       buildLaborTable(document.getElementById('tblCpa'), CPA_ROWS, CPA_FIELDS, 'No.', 46);
       buildDynamicLaborTable(document.getElementById('tblWat'), WW_FIELDS, 'No.', 46, buildWateringRow, 3);
-      buildTwoColTable(document.getElementById('tblPricking'), PRK_FIELDS, 'No.', 46, buildPrickingRow, 3);
+      buildTwoColTable(document.getElementById('tblPricking'), PRK_FIELDS, 'Secondary Seedling Bed', 160, buildPrickingRow, 3);
       buildDynamicLaborTable(document.getElementById('tblWeed'), WW_FIELDS, 'No.', 46, buildWeedingRow, 3);
-      buildTwoColTable(document.getElementById('tblSeedbedPricking'), SB_PRK_FIELDS, 'No.', 46, buildSeedbedPrickingRow, 3);
       buildSimpleTable(document.getElementById('tblPull'), ['Seedling Pulling 1', 'Seedling Pulling 2'], PL_FIELDS, 'Activity', 140);
       buildSeedbedDestructionTable(document.getElementById('tblSeedbedDestruction'));
       initModuleButtons();
@@ -3795,7 +3768,7 @@ window.IFAR_NA = (function () {
       var tr = e.target && e.target.closest ? e.target.closest('tr') : null;
       if (!tr) return;
       if (tr.closest('#tblCpa,#tblWat,#tblWeed')) refreshTotals(tr);
-      else if (tr.closest('#tblAct,#tblPull,#tblSb,#tblSeedbedDestruction,#tblPricking,#tblSeedbedPricking')) tr.classList.toggle('filled', !rowIsEmpty(tr));
+      else if (tr.closest('#tblAct,#tblPull,#tblSb,#tblSeedbedDestruction,#tblPricking')) tr.classList.toggle('filled', !rowIsEmpty(tr));
     });
   });
 })();

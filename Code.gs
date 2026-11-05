@@ -179,7 +179,7 @@ function buildFullSchema_() {
   ['FS1', 'FS2'].forEach(function (p) {
     for (var c = 0; c < colsFs.length; c++) H.push(p + ' ' + colsFs[c]);
   });
-  var colsCpa = ['Date', 'CPA Used', 'Dosage', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Laborer No', 'Laborer Age', 'Total Labor'];
+  var colsCpa = ['Date', 'CPA Used', 'No. of Tank Load', 'Dosage', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Laborer No', 'Laborer Age', 'Total Labor'];
   ['C1', 'C2', 'C3'].forEach(function (p) {
     for (var c = 0; c < colsCpa.length; c++) H.push(p + ' ' + colsCpa[c]);
   });
@@ -194,6 +194,8 @@ function buildFullSchema_() {
   ['WE1', 'WE2', 'WE3'].forEach(function (p) {
     for (var c = 0; c < colsWat.length; c++) H.push(p + ' ' + colsWat[c]);
   });
+  /* Retained for legacy data only. The Seedbed Pricking input table has been
+     removed from the UI, but old spreadsheet values must not be deleted. */
   var colsSbPrk = ['Seedbed', 'No. of Seedling Pricked'];
   ['SBP1', 'SBP2', 'SBP3'].forEach(function (p) {
     for (var c = 0; c < colsSbPrk.length; c++) H.push(p + ' ' + colsSbPrk[c]);
