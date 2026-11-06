@@ -4401,7 +4401,7 @@ window.IFAR_NA = (function () {
 (function () {
   'use strict';
   var LAB = [['famM', 'Fam M'], ['famF', 'Fam F'], ['ftM', 'FT M'], ['ftF', 'FT F'], ['tmpM', 'Tmp M'], ['tmpF', 'Tmp F']];
-  var WEEK_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'stage', label: 'Plant Stage', xlabel: 'Plant Stage', t: 'sel', g: 'stage', w: 104 }, { k: 'scouting', label: 'Insect Scouting', xlabel: 'Insect Scouting', t: 'yn', w: 62 }, { k: 'insect', label: 'Insect Found', xlabel: 'Insect Found', t: 'sel', g: 'insect', w: 124 }, { k: 'etl', label: 'ETL Reached', xlabel: 'ETL Reached', t: 'yn', w: 58 }, { k: 'picking', label: 'Manual Picking', xlabel: 'Manual Picking', t: 'yn', w: 62 }, { k: 'cpa', label: 'CPA Used', xlabel: 'CPA Used', t: 'sel', g: 'cpa', w: 110 }, { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, locked: true, ph: 'auto' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }, { k: 'sign', label: 'Warning Sign Installed', xlabel: 'Warning Sign', t: 'yn', w: 96 }];
+  var WEEK_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'stage', label: 'Plant Stage', xlabel: 'Plant Stage', t: 'sel', g: 'stage', w: 150 }, { k: 'scouting', label: 'Insect Scouting', xlabel: 'Insect Scouting', t: 'yn', w: 62 }, { k: 'insect', label: 'Insect Found', xlabel: 'Insect Found', t: 'sel', g: 'insect', w: 124 }, { k: 'etl', label: 'ETL Reached', xlabel: 'ETL Reached', t: 'yn', w: 58 }, { k: 'picking', label: 'Manual Picking', xlabel: 'Manual Picking', t: 'yn', w: 62 }, { k: 'cpa', label: 'CPA Used', xlabel: 'CPA Used', t: 'sel', g: 'cpa', w: 110 }, { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' }, { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, locked: true, ph: 'auto' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }, { k: 'sign', label: 'Warning Sign Installed', xlabel: 'Warning Sign', t: 'yn', w: 96 }];
   
   // Topping / Suckercide: 'Suckercide Used' (Flumex, Flupro, N/A), dosage default 15ml (fixed)
   var ROUND_FIELDS = [
@@ -4409,6 +4409,7 @@ window.IFAR_NA = (function () {
     { k: 'chem', label: 'Chemical Y/N', xlabel: 'Chemical Y/N', t: 'yn', w: 64 },
     { k: 'manual', label: 'Manual Y/N', xlabel: 'Manual Y/N', t: 'yn', w: 64 },
     { k: 'cpa', label: 'Suckercide Used', xlabel: 'Suckercide Used', t: 'sel', g: 'suckercide', w: 116 },
+    { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' },
     { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, locked: true, ph: '15ml', defVal: '15ml' },
     { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }
   ];
@@ -4416,7 +4417,7 @@ window.IFAR_NA = (function () {
   var DISP_CPA = ['Punch hole then rinse and bury', 'Punch hole then rinse await collection', 'Deliver to buying station', 'Collected by supplier'];
   var DISP_FERT = ['Retained for own use', 'Send to buying station for redemption', 'Sold to third party'];
   var opts = {
-    stage: ['Seedling', 'Transplanted', 'Vegetative', 'Before Topping', 'After Topping', 'Harvesting'],
+    stage: ['Newly Transplanted', 'Vegetative', 'Early Maturity', 'Maturity'],
     insect: ['Cutworm (CT)', 'Aphids (A)', 'Budworm (BD)', 'Hornworm', 'Katydid (KT)', 'Cabbage Loopers', 'Armyworm (AW)'],
     cpa: ['Elicor', 'Prevathon', 'Previcur-N', 'Previter', 'Steward'],
     suckercide: ['Flumex', 'Flupro', 'N/A'],
@@ -4435,7 +4436,11 @@ window.IFAR_NA = (function () {
     var td = el('td'); var inp;
     if (f.t === 'yn') inp = makeYN(f.k);
     else if (f.t === 'sel') inp = makeSelect(f.g, f.k);
-    else {
+    else if (f.t === 'num') {
+      inp = el('input', 'inp num'); inp.type = 'text';
+      inp.setAttribute('data-num', '1'); inp.setAttribute('inputmode', 'decimal');
+      inp.setAttribute('data-k', f.k); inp.placeholder = f.ph || '0';
+    } else {
       inp = el('input', 'inp');
       inp.type = f.t === 'date' ? 'date' : 'text';
       inp.placeholder = f.ph || (f.t === 'date' ? 'MM/DD/YYYY' : f.label);

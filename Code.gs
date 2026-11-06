@@ -240,12 +240,12 @@ function buildFullSchema_() {
 
   /* --- FORM 04: Integrated Pest Management, Topping & Suckercide, Disposal --- */
   H.push('Plots Logged');
-  var colsWk = ['Date', 'Plant Stage', 'Insect Scouting', 'Insect Found', 'ETL Reached', 'Manual Picking', 'CPA Used', 'Dosage', 'PPE', 'Warning Sign', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
+  var colsWk = ['Date', 'Plant Stage', 'Insect Scouting', 'Insect Found', 'ETL Reached', 'Manual Picking', 'CPA Used', 'No. of Tank Load', 'Dosage', 'PPE', 'Warning Sign', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
   for (var n = 1; n <= 12; n++) {
     for (var c = 0; c < colsWk.length; c++) H.push('W' + n + ' ' + colsWk[c]);
   }
   /* Topping / Suckercide: 'Suckercide Used' (renamed from 'CPA Used') */
-  var colsRd = ['Date', 'Chemical Y/N', 'Manual Y/N', 'Suckercide Used', 'Dosage', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
+  var colsRd = ['Date', 'Chemical Y/N', 'Manual Y/N', 'Suckercide Used', 'No. of Tank Load', 'Dosage', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
   for (var n = 1; n <= 12; n++) {
     for (var c = 0; c < colsRd.length; c++) H.push('R' + n + ' ' + colsRd[c]);
   }
