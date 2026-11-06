@@ -184,14 +184,14 @@ function buildFullSchema_() {
     for (var c = 0; c < colsCpa.length; c++) H.push(p + ' ' + colsCpa[c]);
   });
   var colsWat = ['Date', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Laborer No', 'Laborer Age', 'Total Labor'];
-  ['WA1', 'WA2', 'WA3'].forEach(function (p) {
+  ['WA1', 'WA2', 'WA3', 'WA4', 'WA5', 'WA6'].forEach(function (p) {
     for (var c = 0; c < colsWat.length; c++) H.push(p + ' ' + colsWat[c]);
   });
   var colsPrk = ['Date of Pricking', 'No. of Seedlings Pricked'];
-  ['PRK1', 'PRK2', 'PRK3'].forEach(function (p) {
+  ['PRK1', 'PRK2', 'PRK3', 'PRK4', 'PRK5', 'PRK6'].forEach(function (p) {
     for (var c = 0; c < colsPrk.length; c++) H.push(p + ' ' + colsPrk[c]);
   });
-  ['WE1', 'WE2', 'WE3'].forEach(function (p) {
+  ['WE1', 'WE2', 'WE3', 'WE4', 'WE5', 'WE6'].forEach(function (p) {
     for (var c = 0; c < colsWat.length; c++) H.push(p + ' ' + colsWat[c]);
   });
   /* Retained for legacy data only. The Seedbed Pricking input table has been
@@ -201,15 +201,15 @@ function buildFullSchema_() {
     for (var c = 0; c < colsSbPrk.length; c++) H.push(p + ' ' + colsSbPrk[c]);
   });
   var colsPull = ['Date', 'No. of Seedlings', 'Disposal Method'];
-  ['SP1', 'SP2'].forEach(function (p) {
+  ['SP1', 'SP2', 'SP3', 'SP4', 'SP5', 'SP6'].forEach(function (p) {
     for (var c = 0; c < colsPull.length; c++) H.push(p + ' ' + colsPull[c]);
   });
   H.push('Destruction of Seed Bed After TP Date', 'Destruction of Seed Bed After TP Remarks');
 
   /* --- FORM 03: Land Prep, Transplanting, Volume, Sidedress, Hilling & Irrigation --- */
-  /* Land Preparation: 3 initial rows (LP1, LP2, LP3), PPE removed, no labor */
+  /* Land Preparation: six standard schema rows; saves append further dynamic rows. */
   var colsLp = ['Date', 'Method', 'Model', 'HP', 'Fuel L'];
-  ['LP1', 'LP2', 'LP3'].forEach(function (p) {
+  ['LP1', 'LP2', 'LP3', 'LP4', 'LP5', 'LP6'].forEach(function (p) {
     for (var c = 0; c < colsLp.length; c++) H.push(p + ' ' + colsLp[c]);
   });
   var colsFert = ['Date', '18-46-0 Bags', '10-18-24 Bags', '21-0-0 Bags', '0-0-50 Bags', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
@@ -221,9 +221,9 @@ function buildFullSchema_() {
   ['P1', 'P2', 'P3'].forEach(function (p) {
     for (var c = 0; c < colsTp.length; c++) H.push(p + ' ' + colsTp[c]);
   });
-  /* Hilling: 3 initial rows (H1, H2, H3) */
+  /* Hilling: six standard schema rows; saves append further dynamic rows. */
   var colsHl = ['Date', 'Method', 'Model', 'HP', 'Fuel L', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
-  ['H1', 'H2', 'H3'].forEach(function (p) {
+  ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].forEach(function (p) {
     for (var c = 0; c < colsHl.length; c++) H.push(p + ' ' + colsHl[c]);
   });
   var colsIr = ['Date', 'Method', 'Water Source', 'Pump Model', 'HP', 'Gas L', 'Diesel L', 'Est Water Volume (cu.m)', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
@@ -256,7 +256,8 @@ function buildFullSchema_() {
   H.push('Fert Bag: Sold to third party', 'Fert Bag: Sold to third party - Remark');
   H.push('E-Signature Attached', 'E-Signature File Name', 'E-Signed At');
   H.push('FULL_RECORD_JSON');
-  H.push('SP3 Date', 'SP3 No. of Seedlings', 'SP3 Disposal Method');
+  /* SP3 destruction values share the single SP3 column set declared above.
+     Do not declare duplicate SP3 headers here. */
   H.push('H1 Animal Y/N', 'H1 Mechanized Y/N', 'H2 Animal Y/N', 'H2 Mechanized Y/N');
   return H;
 }
@@ -593,9 +594,22 @@ function menuNormalizeDatabaseSchema() {
 }
 
 
-function ensureDatabase_() {
+function ensureDatabase_(additionalHeaders) {
   var s = getOrCreate_(DB_SHEET);
   var fullSchema = buildFullSchema_();
+  if (Array.isArray(additionalHeaders)) fullSchema = fullSchema.concat(additionalHeaders);
+
+  /* Frontend exports contain a repeated Farmer Name identity/profile column and
+     may contain any number of dynamic rows. Keep one physical column per exact
+     header name, appending new names without disturbing existing sheet data. */
+  var uniqueSchema = [], seenSchema = Object.create(null);
+  for (var u = 0; u < fullSchema.length; u++) {
+    var schemaName = String(fullSchema[u] === undefined || fullSchema[u] === null ? '' : fullSchema[u]);
+    if (!schemaName.trim() || seenSchema[schemaName]) continue;
+    seenSchema[schemaName] = true;
+    uniqueSchema.push(schemaName);
+  }
+  fullSchema = uniqueSchema;
 
   if (s.getLastRow() === 0) {
     s.getRange(1, 1, 1, fullSchema.length).setValues([fullSchema]);
@@ -871,7 +885,9 @@ function seedDefaultUsers_(sheet) {
     setRowValue_(table, row, 'Status', d[4]);
     setRowValue_(table, row, 'Created At', now);
     setRowValue_(table, row, 'Updated At', now);
-    setRowValue_(table, row, 'Must Change Password', false);
+    /* Documented starter passwords are only for first access. Force each newly
+       seeded default account to choose a private password immediately. */
+    setRowValue_(table, row, 'Must Change Password', true);
     table.values.push(row);
   }
   saveUsersTable_(table);
@@ -1730,10 +1746,16 @@ function apiSaveUser(token, user) {
    RECORDS API  (unchanged behaviour)
    ============================================================================ */
 function apiEnsureSchema(token, headers) {
-  requireRole_(token, ['Admin', 'User', 'Viewer']);
-  var s = ensureDatabase_();
-  var cols = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
-  return { ok: true, headers: cols, count: cols.length };
+  requireRole_(token, ['Admin', 'User']);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var s = ensureDatabase_(headers);
+    var cols = s.getRange(1, 1, 1, s.getLastColumn()).getValues()[0];
+    return { ok: true, headers: cols, count: cols.length };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function findFcRow_(sheet, fc) {
@@ -1756,7 +1778,7 @@ function apiSaveRecord(token, record, flatObject, schemaHeaders, mode, editToken
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var sheet = ensureDatabase_();
+    var sheet = ensureDatabase_(schemaHeaders);
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var headerMap = {};
     for (var i = 0; i < headers.length; i++) headerMap[headers[i]] = i;
