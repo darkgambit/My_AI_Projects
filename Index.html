@@ -711,7 +711,7 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#5078ac}
           <div class="kvwrap"><table class="kv"><tbody id="profileBody"></tbody></table></div>
         </section>
         <section class="card">
-          <div class="sechead"><span class="secletter">B</span><h2>GPS Coordinates and Farm Lots</h2><span class="hint">WGS84 decimal degrees</span></div>
+          <div class="sechead"><span class="secletter">B</span><h2>1 Point GPS Coordinate for Farm Lot and Curing Barn</h2><span class="hint">WGS84 decimal degrees</span></div>
           <div class="tblwrap" style="max-height:560px">
             <table class="grid" id="tblG">
               <colgroup><col style="width:44px"><col style="width:150px"><col style="width:170px"><col style="width:170px"><col style="width:280px"></colgroup>
@@ -2518,7 +2518,7 @@ window.IFAR_CLOUD_OPTIONS = {
     if (formId === 's01') {
       if (profileFields.indexOf(header) >= 0) section = 'Farmer / Contract Details';
       else {
-        section = 'GPS Coordinates and Farm Lots';
+        section = '1 Point GPS Coordinate for Farm Lot and Curing Barn';
         var gps = /^(Home|Farm Lot \d+|Barn \d+)\s+(Longitude|Latitude|Remark)$/.exec(header);
         if (gps) { iteration = gps[1]; }
       }
