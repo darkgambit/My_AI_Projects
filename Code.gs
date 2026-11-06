@@ -216,6 +216,7 @@ function buildFullSchema_() {
   ['BA1', 'BA2', 'BA3', 'SD1', 'SD2', 'SD3'].forEach(function (p) {
     for (var c = 0; c < colsFert.length; c++) H.push(p + ' ' + colsFert[c]);
   });
+  /* Area Planted is retained for legacy rows but removed from the active UI. */
   var colsTp = ['Area Planted', 'Date', 'Seedlings Transplanted', 'Method', 'Spacing', 'PPE', 'Fam M No', 'Fam M Age', 'Fam F No', 'Fam F Age', 'FT M No', 'FT M Age', 'FT F No', 'FT F Age', 'Tmp M No', 'Tmp M Age', 'Tmp F No', 'Tmp F Age', 'Total Labor'];
   ['P1', 'P2', 'P3'].forEach(function (p) {
     for (var c = 0; c < colsTp.length; c++) H.push(p + ' ' + colsTp[c]);
@@ -229,11 +230,11 @@ function buildFullSchema_() {
   for (var n = 1; n <= 8; n++) {
     for (var c = 0; c < colsIr.length; c++) H.push('IR' + n + ' ' + colsIr[c]);
   }
-  var colsVol = ['Plant Count', 'Effective Area (ha)', 'Estimated Yield (kg/ha)', 'Estimated Volume (kg)', 'Score Robustness', 'Score Disease/Insects', 'Score Cultural Practices', 'Score Weather', 'Total Score', 'Remarks'];
+  var colsVol = ['Plant Count (Survived)', 'Effective Area (ha)', 'Estimated Yield (kg/ha)', 'Estimated Volume (kg)', 'Score Robustness', 'Score Disease/Insects', 'Score Cultural Practices', 'Score Weather', 'Total Score', 'Remarks'];
   ['V1', 'V2'].forEach(function (p) {
     for (var c = 0; c < colsVol.length; c++) H.push(p + ' ' + colsVol[c]);
   });
-  H.push('V3 Plant Count', 'V3 Equivalent Area (ha)', 'V3 Score Robustness', 'V3 Score Disease/Insects');
+  H.push('V3 Plant Count (Survived)', 'V3 Equivalent Area (ha)', 'V3 Score Robustness', 'V3 Score Disease/Insects');
   H.push('V3 Score Cultural Practices', 'V3 Score Weather', 'V3 Total Score', 'V3 Volume Estimate (kg)');
   H.push('V3 Bad Area', 'V3 Bad Area Est Yield (kg/ha)', 'V3 Estimated Salvage Volume (kg)', 'V3 Total 3rd Volume Estimate (kg)');
 
@@ -280,6 +281,9 @@ function buildFullSchema_() {
 /* old column name -> new column name (values are carried across on rebuild) */
 var SCHEMA_RENAMES = {
   'Rounds Logged': 'Plots Logged',
+  'V1 Plant Count': 'V1 Plant Count (Survived)',
+  'V2 Plant Count': 'V2 Plant Count (Survived)',
+  'V3 Plant Count': 'V3 Plant Count (Survived)',
   'FZ Date 1': 'BF Date 1',
   'FZ Date 2': 'BF Date 2',
   'FZ Remarks': 'BF Remarks',

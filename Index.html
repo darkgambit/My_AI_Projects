@@ -1458,7 +1458,7 @@ window.IFAR_CLOUD_OPTIONS = {
     if (formId === 's03') {
       if (/^LP[12] (Fam F|FT M|FT F|Tmp M) (No|Age)$/.test(header)) return false;
       if (/^V[12] (Effective Area \(ha\)|Estimated Volume \(kg\)|Total Score)$/.test(header)) return false;
-      if (['V1 Score Robustness', 'V1 Score Disease/Insects', 'V1 Score Cultural Practices', 'V1 Score Weather', 'V2 Plant Count'].indexOf(header) !== -1) return false;
+      if (['V1 Score Robustness', 'V1 Score Disease/Insects', 'V1 Score Cultural Practices', 'V1 Score Weather', 'V2 Plant Count (Survived)'].indexOf(header) !== -1) return false;
       if (/^V3 (Total Score|Total 3rd Volume Estimate \(kg\))$/.test(header)) return false;
     }
     if (formId === 's04' && /^W\d+ Dosage$/.test(header)) return false;
@@ -1571,13 +1571,24 @@ window.IFAR_CLOUD_OPTIONS = {
      FULL_RECORD_JSON. Each form already knows how to flatten its own nested
      record, so we generate unique markers in a blank-shaped template, invert
      the emitted headers, and then apply the sheet values. */
+  var LEGACY_FLAT_ALIASES = {
+    'V1 Plant Count (Survived)': ['V1 Plant Count'],
+    'V2 Plant Count (Survived)': ['V2 Plant Count'],
+    'V3 Plant Count (Survived)': ['V3 Plant Count']
+  };
+
   function legacyFlatValue_(flat, header) {
     if (!flat) return '';
-    if (Object.prototype.hasOwnProperty.call(flat, header)) return flat[header];
-    var target = String(header || '').trim().toLowerCase();
+    var first = String(header || '');
+    var names = [first].concat(LEGACY_FLAT_ALIASES[first] || []);
     var keys = Object.keys(flat);
-    for (var i = 0; i < keys.length; i++) {
-      if (String(keys[i]).trim().toLowerCase() === target) return flat[keys[i]];
+    for (var n = 0; n < names.length; n++) {
+      var name = names[n];
+      if (Object.prototype.hasOwnProperty.call(flat, name)) return flat[name];
+      var target = name.trim().toLowerCase();
+      for (var i = 0; i < keys.length; i++) {
+        if (String(keys[i]).trim().toLowerCase() === target) return flat[keys[i]];
+      }
     }
     return '';
   }
@@ -1642,6 +1653,16 @@ window.IFAR_CLOUD_OPTIONS = {
       if (m.id === 's02') {
         shape.seedbedPricking = [];
         while (shape.seedbedPricking.length < 3) shape.seedbedPricking.push({ seedbed: '', n: '' });
+      }
+
+      /* Area Planted is no longer an active Transplanting input. Include its
+         legacy keys only while reconstructing old sheet-only records. */
+      if (m.id === 's03') {
+        if (!Array.isArray(shape.transplant)) shape.transplant = [];
+        while (shape.transplant.length < 3) shape.transplant.push({});
+        /* A nonblank seed makes flatten() emit the legacy-only column;
+           markLeaves_ immediately replaces these seeds with unique markers. */
+        for (var tp = 0; tp < 3; tp++) shape.transplant[tp].area = '0';
       }
 
       /* Form 04 can have up to twelve recorded plots even though a new form
@@ -3796,10 +3817,13 @@ window.IFAR_NA = (function () {
   
   // Transplanting: Plot column is number only ('1', '2', '3')
   var TP_ROWS = ['1', '2', '3'];
+  /* Area Planted remains in TP_FIELDS only for legacy load/save support. */
   var TP_FIELDS = [{ k: 'area', label: 'Area Planted', xlabel: 'Area Planted', t: 'num', w: 92, ph: 'e.g. 1.25' }, { k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'seedlings', label: 'Seedlings Transplanted', xlabel: 'Seedlings Transplanted', t: 'num', w: 110, ph: 'e.g. 12000' }, { k: 'method', label: 'Method', xlabel: 'Method', t: 'sel', g: 'tmethod', w: 126 }, { k: 'spacing', label: 'Spacing', xlabel: 'Spacing', t: 'sel', g: 'spacing', w: 100 }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
+  var TP_UI_FIELDS = TP_FIELDS.filter(function (f) { return f.k !== 'area'; });
+  var preservedTransplantAreas = [];
   
   // Hilling / Off Barring: 3 initial rows + dynamic rows
-  var HL_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'method', label: 'Method', xlabel: 'Method', t: 'sel', g: 'lpmethod', w: 112 }, { k: 'model', label: 'Model', xlabel: 'Model', t: 'text', w: 100, ph: 'e.g. Hand Tractor' }, { k: 'hp', label: 'HP', xlabel: 'HP', t: 'num', w: 56, ph: 'e.g. 12' }, { k: 'fuel', label: 'Fuel L', xlabel: 'Fuel L', t: 'num', w: 62, ph: 'e.g. 8' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
+  var HL_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'method', label: 'Method', xlabel: 'Method', t: 'sel', g: 'hlmethod', w: 112 }, { k: 'model', label: 'Model', xlabel: 'Model', t: 'text', w: 100, ph: 'e.g. Hand Tractor' }, { k: 'hp', label: 'HP', xlabel: 'HP', t: 'num', w: 56, ph: 'e.g. 12' }, { k: 'fuel', label: 'Fuel L', xlabel: 'Fuel L', t: 'num', w: 62, ph: 'e.g. 8' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
   
   function hillingMethodFromRow(row) {
     row = row || {};
@@ -3821,11 +3845,11 @@ window.IFAR_NA = (function () {
 
   var IR_ROWS = ['1', '2', '3', '4', '5', '6', '7', '8'];
   var IR_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'method', label: 'Method', xlabel: 'Method', t: 'sel', g: 'imethod', w: 148 }, { k: 'wsource', label: 'Water Source', xlabel: 'Water Source', t: 'sel', g: 'wsource', w: 138 }, { k: 'pump', label: 'Pump Model', xlabel: 'Pump Model', t: 'text', w: 100, ph: 'e.g. 3" Water Pump' }, { k: 'hp', label: 'HP', xlabel: 'HP', t: 'num', w: 56, ph: 'e.g. 12' }, { k: 'gas', label: 'Gas L', xlabel: 'Gas L', t: 'num', w: 60, ph: 'e.g. 3' }, { k: 'diesel', label: 'Diesel L', xlabel: 'Diesel L', t: 'num', w: 64, ph: 'e.g. 6' }, { k: 'watervol', label: 'Estimated Water Volume (cu.m)', xlabel: 'Est Water Volume (cu.m)', t: 'num', w: 118, ph: 'e.g. 1200' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }];
-  var D1_FIELDS = [{ k: 'plant', label: 'Plant Count', xlabel: 'Plant Count', t: 'num', w: 86, ph: 'e.g. 12000' }, { k: 'area', label: 'Effective Area (ha)', xlabel: 'Effective Area (ha)', t: 'num', w: 96, auto: true }, { k: 'yld', label: 'Estimated Yield (kg/ha)', xlabel: 'Estimated Yield (kg/ha)', t: 'num', w: 118, ph: 'e.g. 2500' }, { k: 'volume', label: 'Estimated Volume (kg)', xlabel: 'Estimated Volume (kg)', t: 'num', w: 118, auto: true }, { k: 'sRob', label: 'Score Robustness', xlabel: 'Score Robustness', t: 'num', w: 74, ph: '1-5' }, { k: 'sDis', label: 'Score Disease/Insects', xlabel: 'Score Disease/Insects', t: 'num', w: 80, ph: '1-5' }, { k: 'sCult', label: 'Score Cultural Practices', xlabel: 'Score Cultural Practices', t: 'num', w: 86, ph: '1-5' }, { k: 'sWeath', label: 'Score Weather', xlabel: 'Score Weather', t: 'num', w: 72, ph: '1-5' }, { k: 'remarks', label: 'Remarks', xlabel: 'Remarks', t: 'text', w: 150, ph: 'Remarks…' }];
-  var D2_GOOD = [{ k: 'plant', label: 'Plant Count', xlabel: 'Plant Count', t: 'num', w: 82, ph: 'e.g. 12000' }, { k: 'eqArea', label: 'Equivalent Area', xlabel: 'Equivalent Area (ha)', t: 'num', w: 92, ph: 'e.g. 1.20', maxDecimals: 2 }, { k: 'sRob', label: 'Score Robustness', xlabel: 'Score Robustness', t: 'num', w: 74, ph: '1-5' }, { k: 'sDis', label: 'Score Disease/Insects', xlabel: 'Score Disease/Insects', t: 'num', w: 80, ph: '1-5' }, { k: 'sCult', label: 'Score Cultural Practices', xlabel: 'Score Cultural Practices', t: 'num', w: 86, ph: '1-5' }, { k: 'sWeath', label: 'Score Weather', xlabel: 'Score Weather', t: 'num', w: 72, ph: '1-5' }, { k: 'volEst', label: 'Volume Estimate (kg)', xlabel: 'Volume Estimate (kg)', t: 'num', w: 110, ph: 'e.g. 4500' }];
+  var D1_FIELDS = [{ k: 'plant', label: 'Plant Count (Survived)', xlabel: 'Plant Count (Survived)', t: 'num', w: 86, ph: 'e.g. 12000' }, { k: 'area', label: 'Effective Area (ha)', xlabel: 'Effective Area (ha)', t: 'num', w: 96, auto: true }, { k: 'yld', label: 'Estimated Yield (kg/ha)', xlabel: 'Estimated Yield (kg/ha)', t: 'num', w: 118, ph: 'e.g. 2500' }, { k: 'volume', label: 'Estimated Volume (kg)', xlabel: 'Estimated Volume (kg)', t: 'num', w: 118, auto: true }, { k: 'sRob', label: 'Score Robustness', xlabel: 'Score Robustness', t: 'num', w: 74, ph: '1-5' }, { k: 'sDis', label: 'Score Disease/Insects', xlabel: 'Score Disease/Insects', t: 'num', w: 80, ph: '1-5' }, { k: 'sCult', label: 'Score Cultural Practices', xlabel: 'Score Cultural Practices', t: 'num', w: 86, ph: '1-5' }, { k: 'sWeath', label: 'Score Weather', xlabel: 'Score Weather', t: 'num', w: 72, ph: '1-5' }, { k: 'remarks', label: 'Remarks', xlabel: 'Remarks', t: 'text', w: 150, ph: 'Remarks…' }];
+  var D2_GOOD = [{ k: 'plant', label: 'Plant Count (Survived)', xlabel: 'Plant Count (Survived)', t: 'num', w: 82, ph: 'e.g. 12000' }, { k: 'eqArea', label: 'Equivalent Area', xlabel: 'Equivalent Area (ha)', t: 'num', w: 92, ph: 'e.g. 1.20', maxDecimals: 2 }, { k: 'sRob', label: 'Score Robustness', xlabel: 'Score Robustness', t: 'num', w: 74, ph: '1-5' }, { k: 'sDis', label: 'Score Disease/Insects', xlabel: 'Score Disease/Insects', t: 'num', w: 80, ph: '1-5' }, { k: 'sCult', label: 'Score Cultural Practices', xlabel: 'Score Cultural Practices', t: 'num', w: 86, ph: '1-5' }, { k: 'sWeath', label: 'Score Weather', xlabel: 'Score Weather', t: 'num', w: 72, ph: '1-5' }, { k: 'volEst', label: 'Volume Estimate (kg)', xlabel: 'Volume Estimate (kg)', t: 'num', w: 110, ph: 'e.g. 4500' }];
   var D2_BAD = [{ k: 'badArea', label: 'Area', xlabel: 'Bad Area', t: 'num', w: 82, ph: 'e.g. 0.50', maxDecimals: 2 }, { k: 'badYld', label: 'Estimated Yield (Best guesstimate) (kg/ha)', xlabel: 'Bad Area Est Yield (kg/ha)', t: 'num', w: 128, ph: 'e.g. 1200' }, { k: 'salvage', label: 'Estimated Salvage Volume (kg)', xlabel: 'Estimated Salvage Volume (kg)', t: 'num', w: 128, ph: 'e.g. 1500' }];
   
-  var opts = { lpmethod: ['Animal', 'Mechanized'], tmethod: ['Furrow', 'Ridge'], spacing: ['1.1 x 0.5', '1.0 x 0.5'], imethod: ['Hill to Hill', 'Alternate Furrow - With Dike', 'Alternate Furrow - W/O Dike', 'Full Furrow - With Dike', 'Full Furrow - W/O Dike '], wsource: ['Underground - Shallow Tube Well', 'Underground - Deep Well', 'Surface - Spring', 'Surface - River and Lake', "Gov't Irrigation Canal", 'Others'], ppe: ['C', 'I'] };
+  var opts = { lpmethod: ['Man/Animal', 'Mechanized'], hlmethod: ['Animal', 'Mechanized'], tmethod: ['Furrow', 'Ridge'], spacing: ['1.1 x 0.5', '1.0 x 0.5'], imethod: ['Hill to Hill', 'Alternate Furrow - With Dike', 'Alternate Furrow - W/O Dike', 'Full Furrow - With Dike', 'Full Furrow - W/O Dike '], wsource: ['Underground - Shallow Tube Well', 'Underground - Deep Well', 'Surface - Spring', 'Surface - River and Lake', "Gov't Irrigation Canal", 'Others'], ppe: ['C', 'I'] };
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
   function onSelectChange(e) { var s = e.target; if (s.value !== '__add') return; var g = s.getAttribute('data-group'); var v = prompt('Add new option:'); if (v && v.trim()) { v = v.trim(); if (opts[g].indexOf(v) < 0) { opts[g].push(v); if(window.IFAR_CLOUD_OPTIONS) window.IFAR_CLOUD_OPTIONS.add(g,v); document.querySelectorAll('select[data-group="' + g + '"]').forEach(function (x) { var addOpt = x.querySelector('option[value="__add"]'); var o = el('option', null, v); o.value = v; x.insertBefore(o, addOpt); }); } s.value = v; } else s.value = ''; }
@@ -4133,10 +4157,17 @@ window.IFAR_NA = (function () {
     tr.classList.toggle('filled', !rowIsEmpty(tr));
   }
 
-  var KEYS = { lp: fieldKeys(LP_FIELDS), ft: fieldKeys(FT_FIELDS), tp: fieldKeys(TP_FIELDS), hl: fieldKeys(HL_FIELDS), ir: fieldKeys(IR_FIELDS) };
+  var KEYS = { lp: fieldKeys(LP_FIELDS), ft: fieldKeys(FT_FIELDS), tp: fieldKeys(TP_UI_FIELDS), hl: fieldKeys(HL_FIELDS), ir: fieldKeys(IR_FIELDS) };
   var D1_KEYS = D1_FIELDS.map(function(f){return f.k;}); var D2_KEYS = D2_GOOD.concat(D2_BAD).map(function(f){return f.k;});
 
   function collectRows(bodyId, keys) { var out = [], elB = document.getElementById(bodyId); if (!elB) return out; var rows = elB.rows; for (var i = 0; i < rows.length; i++) out.push(rowValues(rows[i], keys)); return out; }
+  function collectTransplantRows() {
+    var rows = collectRows('tblCBody', KEYS.tp);
+    for (var i = 0; i < rows.length; i++) {
+      if (preservedTransplantAreas[i] !== undefined) rows[i].area = preservedTransplantAreas[i];
+    }
+    return rows;
+  }
   function collectVol(trId, keys, totalSel) { var tr = document.getElementById(trId); var o = rowValues(tr, keys); o.total = tr.querySelector(totalSel) ? String(tr.querySelector(totalSel).textContent) : ''; return o; }
 
   function collectForm() {
@@ -4145,7 +4176,7 @@ window.IFAR_NA = (function () {
     return {
       landPrep: collectRows('tblABody', KEYS.lp),
       fert: collectRows('tblBBody', KEYS.ft),
-      transplant: collectRows('tblCBody', KEYS.tp),
+      transplant: collectTransplantRows(),
       volume: { v1: collectVol('vol1', D1_KEYS, '.totalScore'), v2: collectVol('vol2', D1_KEYS, '.totalScore'), v3: v3 },
       hilling: collectRows('tableEBody', KEYS.hl),
       irrigation: collectRows('tblFBody', KEYS.ir)
@@ -4153,6 +4184,7 @@ window.IFAR_NA = (function () {
   }
 
   function clearPane() {
+    preservedTransplantAreas = [];
     var bLP = document.getElementById('tblABody'); if (bLP) { bLP.innerHTML = ''; for (var i = 1; i <= 3; i++) bLP.appendChild(buildLandPrepRow(i)); }
     ['tblBBody', 'tblCBody', 'tblFBody'].forEach(function (bid) { var elB = document.getElementById(bid); if (!elB) return; var rows = elB.rows; var keys = { tblBBody: KEYS.ft, tblCBody: KEYS.tp, tblFBody: KEYS.ir }[bid]; for (var i = 0; i < rows.length; i++) { setRowValues(rows[i], {}, keys); refreshTotals(rows[i]); } });
     var bHL = document.getElementById('tableEBody'); if (bHL) { bHL.innerHTML = ''; for (var i = 1; i <= 3; i++) bHL.appendChild(buildHillingRow(i)); }
@@ -4160,6 +4192,10 @@ window.IFAR_NA = (function () {
   }
 
   function fillPane(rec) {
+    /* Area Planted is hidden from the current UI but retained for old records. */
+    preservedTransplantAreas = (rec.transplant || []).map(function (row) {
+      return row && row.area !== undefined && row.area !== null ? String(row.area) : '';
+    });
     // Dynamic Land Prep
     var bLP = document.getElementById('tblABody');
     if (bLP) {
@@ -4200,6 +4236,11 @@ window.IFAR_NA = (function () {
       maxLP = Math.max(maxLP, (r.landPrep || []).length);
       maxHL = Math.max(maxHL, (r.hilling || []).length);
     });
+    var includeTpArea = recs.some(function (r) {
+      return (r.transplant || []).some(function (row) {
+        return row && row.area !== undefined && row.area !== null && String(row.area).trim() !== '';
+      });
+    });
 
     var H = ['FC Code', 'Farmer Name', 'Last Updated'];
     
@@ -4214,10 +4255,13 @@ window.IFAR_NA = (function () {
     ['BA1', 'BA2', 'BA3', 'SD1', 'SD2', 'SD3'].forEach(function (p) { ftL.forEach(function (l) { H.push(p + ' ' + l); }); });
 
     // Transplanting: P1, P2, P3
-    var tpL = TP_FIELDS.map(function (f) { return f.xlabel; });
+    var tpL = TP_UI_FIELDS.map(function (f) { return f.xlabel; });
     LAB.forEach(function (g) { tpL.push(g[1] + ' No', g[1] + ' Age'); });
     tpL.push('Total Labor');
-    ['P1', 'P2', 'P3'].forEach(function (p) { tpL.forEach(function (l) { H.push(p + ' ' + l); }); });
+    ['P1', 'P2', 'P3'].forEach(function (p) {
+      if (includeTpArea) H.push(p + ' Area Planted');
+      tpL.forEach(function (l) { H.push(p + ' ' + l); });
+    });
 
     // Hilling: H1..H{maxHL}
     var hlL = HL_FIELDS.map(function (f) { return f.xlabel; });
@@ -4232,8 +4276,8 @@ window.IFAR_NA = (function () {
     ['IR1', 'IR2', 'IR3', 'IR4', 'IR5', 'IR6', 'IR7', 'IR8'].forEach(function (p) { irL.forEach(function (l) { H.push(p + ' ' + l); }); });
 
     // Volume
-    var D1_COLS = [['plant', 'Plant Count'], ['area', 'Effective Area (ha)'], ['yld', 'Estimated Yield (kg/ha)'], ['volume', 'Estimated Volume (kg)'], ['sRob', 'Score Robustness'], ['sDis', 'Score Disease/Insects'], ['sCult', 'Score Cultural Practices'], ['sWeath', 'Score Weather'], ['total', 'Total Score'], ['remarks', 'Remarks']];
-    var D2_COLS = [['plant', 'Plant Count'], ['eqArea', 'Equivalent Area (ha)'], ['sRob', 'Score Robustness'], ['sDis', 'Score Disease/Insects'], ['sCult', 'Score Cultural Practices'], ['sWeath', 'Score Weather'], ['total', 'Total Score'], ['volEst', 'Volume Estimate (kg)'], ['badArea', 'Bad Area'], ['badYld', 'Bad Area Est Yield (kg/ha)'], ['salvage', 'Estimated Salvage Volume (kg)'], ['total3', 'Total 3rd Volume Estimate (kg)']];
+    var D1_COLS = [['plant', 'Plant Count (Survived)'], ['area', 'Effective Area (ha)'], ['yld', 'Estimated Yield (kg/ha)'], ['volume', 'Estimated Volume (kg)'], ['sRob', 'Score Robustness'], ['sDis', 'Score Disease/Insects'], ['sCult', 'Score Cultural Practices'], ['sWeath', 'Score Weather'], ['total', 'Total Score'], ['remarks', 'Remarks']];
+    var D2_COLS = [['plant', 'Plant Count (Survived)'], ['eqArea', 'Equivalent Area (ha)'], ['sRob', 'Score Robustness'], ['sDis', 'Score Disease/Insects'], ['sCult', 'Score Cultural Practices'], ['sWeath', 'Score Weather'], ['total', 'Total Score'], ['volEst', 'Volume Estimate (kg)'], ['badArea', 'Bad Area'], ['badYld', 'Bad Area Est Yield (kg/ha)'], ['salvage', 'Estimated Salvage Volume (kg)'], ['total3', 'Total 3rd Volume Estimate (kg)']];
     ['V1', 'V2'].forEach(function (p) { D1_COLS.forEach(function (c) { H.push(p + ' ' + c[1]); }); });
     D2_COLS.forEach(function (c) { H.push('V3 ' + c[1]); });
 
@@ -4259,7 +4303,8 @@ window.IFAR_NA = (function () {
       var tp = rec.transplant || [];
       ['P1', 'P2', 'P3'].forEach(function (p, i) {
         var o = tp[i] || {};
-        TP_FIELDS.forEach(function (f) { row.push(o[f.k] !== undefined ? o[f.k] : ''); });
+        if (includeTpArea) row.push(o.area !== undefined && o.area !== null ? o.area : '');
+        TP_UI_FIELDS.forEach(function (f) { row.push(o[f.k] !== undefined ? o[f.k] : ''); });
         LAB.forEach(function (g) { row.push(o[g[0] + '_n'] || '', o[g[0] + '_a'] || ''); });
         var ls = 0;
         LAB.forEach(function (g) { var v = parseFloat(o[g[0] + '_n']); if (!isNaN(v)) ls += v; });
@@ -4315,7 +4360,7 @@ window.IFAR_NA = (function () {
     buildPane: function () {
       buildLandPrepTable(document.getElementById('tblA'));
       buildLaborTable(document.getElementById('tblB'), FT_ROWS, FT_FIELDS, 'Activity', 118, true);
-      buildLaborTable(document.getElementById('tblC'), TP_ROWS, TP_FIELDS, 'Plot', 56, false);
+      buildLaborTable(document.getElementById('tblC'), TP_ROWS, TP_UI_FIELDS, 'Plot', 56, false);
       buildVolumeTable1();
       buildVolumeTable3();
       buildHillingTable(document.getElementById('tableE'));
