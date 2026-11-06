@@ -863,6 +863,22 @@ body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#5078ac}
               </table>
             </div>
           </div>
+          <div class="affirmation-block" style="margin-top:18px; padding-top:16px; border-top:1px solid rgba(127,154,190,.28)">
+            <p style="margin:0; font-size:13px; line-height:1.65; font-weight:600">I affirm that the veracity of all information given and recorded to best of my knowledge and further given my consent to the use of my personal data collected in this form as indicated above.</p>
+            <div class="subhead" style="margin:16px 0 10px">E-Signature</div>
+            <div id="signatureEmpty" style="padding:14px; border:1px dashed rgba(127,154,190,.45); border-radius:10px; color:#91a7c4; font-size:12.5px">No e-signature attached.</div>
+            <div id="signaturePreview" style="display:none">
+              <img id="signatureImage" alt="Attached e-signature" style="display:block; width:100%; max-width:420px; height:140px; object-fit:contain; background:#fff; border:1px solid rgba(127,154,190,.45); border-radius:10px; padding:6px">
+              <div id="signatureName" style="margin-top:8px; font-size:12.5px; font-weight:700"></div>
+              <div id="signatureDate" style="margin-top:3px; font-size:11.5px; color:#91a7c4"></div>
+            </div>
+            <div class="gridfoot" style="padding-top:10px">
+              <button id="btnAttachSignature" type="button" class="btn small navy">Attach E-Signature</button>
+              <button id="btnRemoveSignature" type="button" class="btn small ghost" style="display:none">Remove</button>
+              <span id="signatureStatus" role="status" aria-live="polite" style="font-size:11.5px; color:#91a7c4"></span>
+            </div>
+            <input id="signatureFile" type="file" accept="image/png,image/jpeg,image/webp" style="display:none">
+          </div>
         </section>
       </div>
 
@@ -2006,6 +2022,8 @@ window.IFAR_CLOUD_OPTIONS = {
 
   function clientFlatten_(obj, prefix, out, depth) {
     depth = depth || 0;
+    /* Image bytes are not useful in change prompts; attachment metadata is. */
+    if (prefix === 's04.signature.data') return out;
     if (obj === null || obj === undefined || depth > 12) return out;
     if (typeof obj !== 'object') {
       var v = String(obj).trim();
@@ -2559,6 +2577,7 @@ window.IFAR_CLOUD_OPTIONS = {
       if (header === 'Plots Logged') section = 'Topping / Suckercide Application';
       else if (header.indexOf('CPA: ') === 0) { section = 'CPA Container & Fert Bag Disposal/Retrieval · CPA Containers'; }
       else if (header.indexOf('Fert Bag: ') === 0) { section = 'CPA Container & Fert Bag Disposal/Retrieval · Fertilizer Bag'; }
+      else if (header.indexOf('E-Sign') === 0) { section = 'Affirmation and E-Signature'; }
       else {
         var sm4 = /^([A-Z]+)(\d*)\s+(.+)$/.exec(header);
         if (sm4) {
@@ -4425,6 +4444,173 @@ window.IFAR_NA = (function () {
   };
   var CPA_DOSAGE = { elicor: '25 ml', prevathon: '25 ml', previcurn: '65 ml', previter: '65 ml', steward: '4 gms' };
 
+  /* Keep signature images small enough for the record's JSON spreadsheet cell.
+     Only metadata is included in flattened report columns; the compressed
+     image remains in FULL_RECORD_JSON and is restored when the record opens. */
+  var SIGNATURE_MAX_DATA_CHARS = 14000;
+  var signatureState = { attached: false, fileName: '', data: '', signedAt: '' };
+  var signatureEventsReady = false;
+
+  function signatureAttached_(sig) {
+    return !!(sig && (sig.data || sig.attached === true || String(sig.attached || '').trim().toUpperCase() === 'Y'));
+  }
+
+  function setSignatureStatus_(message) {
+    var status = document.getElementById('signatureStatus');
+    if (status) status.textContent = message || '';
+  }
+
+  function renderSignature_() {
+    var empty = document.getElementById('signatureEmpty');
+    var preview = document.getElementById('signaturePreview');
+    var image = document.getElementById('signatureImage');
+    var name = document.getElementById('signatureName');
+    var date = document.getElementById('signatureDate');
+    var attach = document.getElementById('btnAttachSignature');
+    var remove = document.getElementById('btnRemoveSignature');
+    if (!empty || !preview || !image || !name || !date || !attach || !remove) return;
+    var attached = signatureAttached_(signatureState);
+    var hasImage = !!signatureState.data;
+    empty.style.display = hasImage ? 'none' : 'block';
+    empty.textContent = attached ? 'E-signature is recorded for this record.' : 'No e-signature attached.';
+    preview.style.display = hasImage ? 'block' : 'none';
+    if (hasImage) image.src = signatureState.data;
+    else image.removeAttribute('src');
+    name.textContent = hasImage ? (signatureState.fileName || 'Attached e-signature') : '';
+    if (hasImage && signatureState.signedAt) {
+      var signed = new Date(signatureState.signedAt);
+      date.textContent = 'Signed: ' + (isNaN(signed.getTime()) ? signatureState.signedAt : signed.toLocaleString());
+    } else date.textContent = '';
+    attach.textContent = attached ? 'Replace E-Signature' : 'Attach E-Signature';
+    remove.style.display = attached ? 'inline-flex' : 'none';
+  }
+
+  function setSignature_(sig) {
+    sig = sig || {};
+    var data = String(sig.data || '');
+    if (data && !/^data:image\/(?:png|jpeg|webp);base64,/i.test(data)) data = '';
+    signatureState = {
+      attached: signatureAttached_(sig),
+      fileName: String(sig.fileName || ''),
+      data: data,
+      signedAt: String(sig.signedAt || '')
+    };
+    renderSignature_();
+  }
+
+  function signatureValue_() {
+    return {
+      attached: signatureAttached_(signatureState),
+      fileName: String(signatureState.fileName || ''),
+      data: String(signatureState.data || ''),
+      signedAt: String(signatureState.signedAt || '')
+    };
+  }
+
+  function clearSignature_() {
+    signatureState = { attached: false, fileName: '', data: '', signedAt: '' };
+    var input = document.getElementById('signatureFile');
+    if (input) input.value = '';
+    renderSignature_();
+    setSignatureStatus_('');
+  }
+
+  function markSignatureChanged_() {
+    var input = document.getElementById('signatureFile');
+    if (input && typeof Event === 'function') input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function compressSignatureImage_(image) {
+    var sourceW = Number(image.naturalWidth || image.width) || 0;
+    var sourceH = Number(image.naturalHeight || image.height) || 0;
+    if (sourceW < 1 || sourceH < 1) throw new Error('The selected image has no readable dimensions.');
+    var fit = Math.min(420 / sourceW, 140 / sourceH, 1);
+    var baseW = Math.max(1, Math.round(sourceW * fit));
+    var baseH = Math.max(1, Math.round(sourceH * fit));
+    var scale = 1, quality = 0.8;
+    var canvas = document.createElement('canvas');
+    for (var attempt = 0; attempt < 10; attempt++) {
+      canvas.width = Math.max(1, Math.round(baseW * scale));
+      canvas.height = Math.max(1, Math.round(baseH * scale));
+      var context = canvas.getContext('2d');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      var data = canvas.toDataURL('image/jpeg', quality);
+      if (data.length <= SIGNATURE_MAX_DATA_CHARS) return data;
+      if (quality > 0.55) quality = Math.max(0.55, quality - 0.1);
+      else scale *= 0.8;
+    }
+    throw new Error('The signature image is too complex to save. Please use a simpler signature image.');
+  }
+
+  function processSignatureFile_(file) {
+    if (!file) return;
+    var input = document.getElementById('signatureFile');
+    var attach = document.getElementById('btnAttachSignature');
+    var remove = document.getElementById('btnRemoveSignature');
+    function finish() {
+      if (attach) attach.disabled = false;
+      if (remove) remove.disabled = false;
+      if (input) input.value = '';
+    }
+    function fail(message) {
+      setSignatureStatus_(message);
+      alert(message);
+      finish();
+    }
+    var fileName = String(file.name || 'e-signature');
+    var fileType = String(file.type || '').toLowerCase();
+    if (!/^image\/(?:png|jpeg|webp)$/.test(fileType) && !/\.(?:png|jpe?g|webp)$/i.test(fileName)) {
+      fail('Please choose a PNG, JPG, or WebP signature image.');
+      return;
+    }
+    if (Number(file.size || 0) > 8 * 1024 * 1024) {
+      fail('Please choose a signature image smaller than 8 MB.');
+      return;
+    }
+    if (attach) attach.disabled = true;
+    if (remove) remove.disabled = true;
+    setSignatureStatus_('Processing signature image…');
+    var reader = new FileReader();
+    reader.onerror = function () { fail('The signature image could not be read. Please try another file.'); };
+    reader.onload = function () {
+      var image = new Image();
+      image.onerror = function () { fail('The selected file is not a readable signature image.'); };
+      image.onload = function () {
+        try {
+          var data = compressSignatureImage_(image);
+          setSignature_({ attached: true, fileName: fileName, data: data, signedAt: new Date().toISOString() });
+          setSignatureStatus_('E-signature attached and optimized for saving.');
+          markSignatureChanged_();
+          finish();
+        } catch (err) { fail(err.message || String(err)); }
+      };
+      image.src = String(reader.result || '');
+    };
+    try { reader.readAsDataURL(file); }
+    catch (err) { fail('The signature image could not be read. Please try another file.'); }
+  }
+
+  function initSignature_() {
+    if (signatureEventsReady) return;
+    var attach = document.getElementById('btnAttachSignature');
+    var remove = document.getElementById('btnRemoveSignature');
+    var input = document.getElementById('signatureFile');
+    if (!attach || !remove || !input) return;
+    signatureEventsReady = true;
+    attach.addEventListener('click', function () { input.value = ''; input.click(); });
+    input.addEventListener('change', function () {
+      if (input.files && input.files[0]) processSignatureFile_(input.files[0]);
+    });
+    remove.addEventListener('click', function () {
+      clearSignature_();
+      setSignatureStatus_('E-signature removed.');
+      markSignatureChanged_();
+    });
+    renderSignature_();
+  }
+
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
   function onSelectChange(e) { var s = e.target; if (s.value !== '__add') return; var g = s.getAttribute('data-group'); var v = prompt('Add new option:'); if (v && v.trim()) { v = v.trim(); if (opts[g].indexOf(v) < 0) { opts[g].push(v); if(window.IFAR_CLOUD_OPTIONS) window.IFAR_CLOUD_OPTIONS.add(g,v); document.querySelectorAll('select[data-group="' + g + '"]').forEach(function (x) { var addOpt = x.querySelector('option[value="__add"]'); var o = el('option', null, v); o.value = v; x.insertBefore(o, addOpt); }); } s.value = v; } else s.value = ''; }
   function makeSelect(group, key) { var s = el('select', 'inp'); s.setAttribute('data-k', key); s.setAttribute('data-group', group); var blank = el('option', null, 'Select…'); blank.value = ''; s.appendChild(blank); opts[group].forEach(function (v) { var o = el('option', null, v); o.value = v; s.appendChild(o); }); var add = el('option', null, '＋ Add new…'); add.value = '__add'; s.appendChild(add); s.addEventListener('change', onSelectChange); return s; }
@@ -4527,10 +4713,11 @@ window.IFAR_NA = (function () {
     var rounds = [];
     var rRows = document.getElementById('roundsBody').rows;
     for (i = 0; i < rRows.length; i++) rounds.push(rowValues(rRows[i], RK));
-    return { weeks: weeks, rounds: rounds, disposal: { cpa: collectDisposal('dispCpa'), fert: collectDisposal('dispFert') } };
+    return { weeks: weeks, rounds: rounds, disposal: { cpa: collectDisposal('dispCpa'), fert: collectDisposal('dispFert') }, signature: signatureValue_() };
   }
   
   function clearPane() {
+    clearSignature_();
     var wRows = document.getElementById('weeksBody').rows, i;
     for (i = 0; i < wRows.length; i++) { setRowValues(wRows[i], {}, WK); refreshTotals(wRows[i]); }
     var body = document.getElementById('roundsBody');
@@ -4544,6 +4731,8 @@ window.IFAR_NA = (function () {
   }
   
   function fillPane(rec) {
+    setSignature_(rec.signature);
+    setSignatureStatus_('');
     var wRows = document.getElementById('weeksBody').rows;
     (rec.weeks || []).forEach(function (w, i) {
       if (wRows[i]) { setRowValues(wRows[i], w, WK); applyCpaDosage(wRows[i], false); refreshTotals(wRows[i]); }
@@ -4580,6 +4769,7 @@ window.IFAR_NA = (function () {
     for (i = 1; i <= maxR; i++) for (j = 0; j < rL.length; j++) H.push('R' + i + ' ' + rL[j]);
     DISP_CPA.forEach(function (l) { H.push('CPA: ' + l, 'CPA: ' + l + ' - Remark'); });
     DISP_FERT.forEach(function (l) { H.push('Fert Bag: ' + l, 'Fert Bag: ' + l + ' - Remark'); });
+    H.push('E-Signature Attached', 'E-Signature File Name', 'E-Signed At');
     var rows = recs.map(function (rec) {
       var row = [rec.fc, rec.farmer || '', rec.updatedAt || '', (rec.rounds || []).length];
       for (var w = 0; w < 12; w++) {
@@ -4600,6 +4790,8 @@ window.IFAR_NA = (function () {
       DISP_CPA.forEach(function (l, di) { row.push(cpa[di] ? cpa[di].v || '' : '', cpa[di] ? cpa[di].r || '' : ''); });
       var fert = (rec.disposal && rec.disposal.fert) || [];
       DISP_FERT.forEach(function (l, di) { row.push(fert[di] ? fert[di].v || '' : '', fert[di] ? fert[di].r || '' : ''); });
+      var signature = rec.signature || {};
+      row.push(signatureAttached_(signature) ? 'Y' : '', signature.fileName || '', signature.signedAt || '');
       return row;
     });
     return { headers: H, rows: rows };
@@ -4635,6 +4827,7 @@ window.IFAR_NA = (function () {
     document.getElementById('pane-f04').style.display = 'flex';
     var m = window.__FARM_SHELL.FORMS.find(function (x) { return x.id === 's04'; });
     if (m) m.buildPane();
+    initSignature_();
     document.getElementById('pane-f04').style.display = '';
     document.addEventListener('input', function (e) {
       var tr = e.target && e.target.closest ? e.target.closest('tr') : null;

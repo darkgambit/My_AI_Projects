@@ -254,6 +254,7 @@ function buildFullSchema_() {
   H.push('CPA: Deliver to buying station', 'CPA: Deliver to buying station - Remark', 'CPA: Collected by supplier', 'CPA: Collected by supplier - Remark');
   H.push('Fert Bag: Retained for own use', 'Fert Bag: Retained for own use - Remark', 'Fert Bag: Send to buying station for redemption', 'Fert Bag: Send to buying station for redemption - Remark');
   H.push('Fert Bag: Sold to third party', 'Fert Bag: Sold to third party - Remark');
+  H.push('E-Signature Attached', 'E-Signature File Name', 'E-Signed At');
   H.push('FULL_RECORD_JSON');
   H.push('SP3 Date', 'SP3 No. of Seedlings', 'SP3 Disposal Method');
   H.push('H1 Animal Y/N', 'H1 Mechanized Y/N', 'H2 Animal Y/N', 'H2 Mechanized Y/N');
@@ -1416,6 +1417,8 @@ var DIFF_SKIP_KEYS = { v: 1, fc: 1, farmer: 1, updatedAt: 1, updatedBy: 1, revis
 
 function flattenRecord_(obj, prefix, out, depth) {
   depth = depth || 0;
+  /* Attachment metadata is audited without comparing or printing image bytes. */
+  if (prefix === 's04.signature.data') return out;
   if (obj === null || obj === undefined || depth > 12) return out;
   if (typeof obj !== 'object') {
     var val = String(obj);
@@ -1475,7 +1478,13 @@ function countFilledFields_(record) {
 function snapshotOf_(record) {
   if (!record) return '';
   var json;
-  try { json = JSON.stringify(record); } catch (e) { return ''; }
+  try {
+    var copy = JSON.parse(JSON.stringify(record));
+    if (copy.s04 && copy.s04.signature && copy.s04.signature.data) {
+      copy.s04.signature.data = '[image data omitted]';
+    }
+    json = JSON.stringify(copy);
+  } catch (e) { return ''; }
   return json.length > MAX_SNAPSHOT_CHARS ? json.slice(0, MAX_SNAPSHOT_CHARS) + '…[truncated]' : json;
 }
 
@@ -1964,6 +1973,16 @@ function apiReleaseEdit(token, fc) {
   return { ok: true };
 }
 
+/* Bulk list/report responses need signature metadata, not every image payload.
+   apiGetRecord still returns the full image when one record is opened. */
+function stripSignaturePayload_(record) {
+  if (!record || typeof record !== 'object' || !record.s04 || !record.s04.signature) return record;
+  var signature = record.s04.signature;
+  if (signature.data) signature.attached = true;
+  if (Object.prototype.hasOwnProperty.call(signature, 'data')) delete signature.data;
+  return record;
+}
+
 function apiGetAll(token) {
   requireRole_(token, ['Admin', 'User', 'Viewer']);
   var sheet = ensureDatabase_();
@@ -2005,6 +2024,7 @@ function apiGetAll(token) {
       legacyData = true;
       legacyFlat = flatRowObject_(sheet, r + 2, headers);
     }
+    if (recObj) stripSignaturePayload_(recObj);
 
     records.push({
       fc: fc,
