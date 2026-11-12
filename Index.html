@@ -4622,36 +4622,36 @@ window.IFAR_NA = (function () {
   function buildFieldCell(f, tr) {
     var td = el('td'); var inp;
     if (f.t === 'dose') {
-      var doseWrap = el('div');
-      doseWrap.style.display = 'flex';
-      doseWrap.style.alignItems = 'center';
-      doseWrap.style.gap = '4px';
       var doseSelect = el('select', 'inp');
-      doseSelect.setAttribute('aria-label', 'Choose a common dosage');
-      doseSelect.setAttribute('data-dosage-choice', '1');
-      var doseBlank = el('option', null, 'Choose'); doseBlank.value = ''; doseSelect.appendChild(doseBlank);
-      ['15ml', '20ml'].forEach(function (value) {
-        var option = el('option', null, value); option.value = value; doseSelect.appendChild(option);
+      doseSelect.setAttribute('aria-label', 'Dosage');
+      doseSelect.setAttribute('data-k', 'dosage-choice');
+      [['15ml', '15ml'], ['20ml', '20ml'], ['Others', 'Others']].forEach(function (item) {
+        var option = el('option', null, item[0]); option.value = item[1]; doseSelect.appendChild(option);
       });
-      doseSelect.style.width = '76px';
+      doseSelect.style.width = '100%';
+
       inp = el('input', 'inp');
       inp.type = 'text';
       inp.setAttribute('data-k', f.k);
-      inp.setAttribute('aria-label', 'Dosage; select a common value or type manually');
-      inp.placeholder = f.ph || 'Type dosage';
-      inp.style.width = '86px';
-      inp.style.minWidth = '0';
+      inp.setAttribute('aria-label', 'Enter another dosage');
+      inp.placeholder = f.ph || 'Enter dosage';
+      inp.style.display = 'none';
+      inp.style.width = '100%';
+      inp.style.marginTop = '4px';
       if (f.defVal) inp.value = f.defVal;
-      doseSelect.value = f.defVal || '';
+
       doseSelect.addEventListener('change', function () {
-        if (doseSelect.value) inp.value = doseSelect.value;
+        if (doseSelect.value === 'Others') {
+          inp.value = '';
+          inp.style.display = '';
+          inp.focus();
+        } else {
+          inp.value = doseSelect.value;
+          inp.style.display = 'none';
+        }
       });
-      inp.addEventListener('input', function () {
-        doseSelect.value = (inp.value === '15ml' || inp.value === '20ml') ? inp.value : '';
-      });
-      doseWrap.appendChild(doseSelect);
-      doseWrap.appendChild(inp);
-      td.appendChild(doseWrap);
+      td.appendChild(doseSelect);
+      td.appendChild(inp);
       return td;
     }
     if (f.t === 'yn') inp = makeYN(f.k);
@@ -4721,8 +4721,10 @@ window.IFAR_NA = (function () {
         }
         window.IFAR_NA.setValue(inp, v);
         if (k === 'dosage' && tr.closest('#tblRd')) {
-          var dosageChoice = tr.querySelector('[data-dosage-choice]');
-          if (dosageChoice) dosageChoice.value = (v === '15ml' || v === '20ml') ? v : '';
+          var dosageChoice = tr.querySelector('[data-k="dosage-choice"]');
+          var commonDose = (v === '15ml' || v === '20ml');
+          if (dosageChoice) dosageChoice.value = commonDose ? v : 'Others';
+          inp.style.display = commonDose ? 'none' : '';
         }
       }
     });
@@ -4732,7 +4734,7 @@ window.IFAR_NA = (function () {
     var inputs = tr.querySelectorAll('input, select');
     for (var i = 0; i < inputs.length; i++) {
       if (inputs[i].type === 'hidden') continue;
-      if (inputs[i].hasAttribute('data-dosage-choice')) continue;
+      if (inputs[i].getAttribute('data-k') === 'dosage-choice') continue;
       if (inputs[i].getAttribute('data-k') === 'dosage' && inputs[i].value === '15ml') continue;
       if (String(inputs[i].value).trim() !== '') return false;
     }
