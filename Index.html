@@ -3279,7 +3279,7 @@ window.IFAR_NA = (function () {
   var ACT_ROWS = ['Sowing', 'Re-sowing', 'Basal Fertilization', 'Top Dress Fertilization', 'Clipping'];
   var ACT_PRE = ['SW', 'RS', 'BF', 'TF', 'CL'];
   var ACT_FIELDS = [{ k: 'date1', label: 'Date 1', xlabel: 'Date 1', t: 'date', w: 126 }, { k: 'date2', label: 'Date 2', xlabel: 'Date 2', t: 'date', w: 126 }, { k: 'remarks', label: 'Remarks', xlabel: 'Remarks', t: 'text', w: 240, ph: 'Remarks…' }];
-  var SB_ROWS = ['10-18-24', '21-0-0'];
+  var SB_ROWS = ['10-18-24', '18-46-0', '21-0-0'];
   var SB_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 126 }, { k: 'qty', label: 'Qty (kg/bags)', xlabel: 'Qty (kg/bags)', t: 'num', w: 100, ph: 'e.g. 4' }, { k: 'unit', label: 'Unit', xlabel: 'Unit', t: 'sel', g: 'unit', w: 90 }, { k: 'remarks', label: 'Remarks', xlabel: 'Remarks', t: 'text', w: 220, ph: 'Remarks…' }];
   var CPA_ROWS = ['1', '2', '3'];
   var CPA_FIELDS = [
@@ -3869,7 +3869,7 @@ window.IFAR_NA = (function () {
   var D2_GOOD = [{ k: 'plant', label: 'Plant Count (Survived)', xlabel: 'Plant Count (Survived)', t: 'num', w: 82, ph: 'e.g. 12000' }, { k: 'eqArea', label: 'Equivalent Area', xlabel: 'Equivalent Area (ha)', t: 'num', w: 92, ph: 'e.g. 1.20', maxDecimals: 2 }, { k: 'sRob', label: 'Score Robustness', xlabel: 'Score Robustness', t: 'num', w: 74, ph: '1-5' }, { k: 'sDis', label: 'Score Disease/Insects', xlabel: 'Score Disease/Insects', t: 'num', w: 80, ph: '1-5' }, { k: 'sCult', label: 'Score Cultural Practices', xlabel: 'Score Cultural Practices', t: 'num', w: 86, ph: '1-5' }, { k: 'sWeath', label: 'Score Weather', xlabel: 'Score Weather', t: 'num', w: 72, ph: '1-5' }, { k: 'volEst', label: 'Volume Estimate (kg)', xlabel: 'Volume Estimate (kg)', t: 'num', w: 110, ph: 'e.g. 4500' }];
   var D2_BAD = [{ k: 'badArea', label: 'Area', xlabel: 'Bad Area', t: 'num', w: 82, ph: 'e.g. 0.50', maxDecimals: 2 }, { k: 'badYld', label: 'Estimated Yield (Best guesstimate) (kg/ha)', xlabel: 'Bad Area Est Yield (kg/ha)', t: 'num', w: 128, ph: 'e.g. 1200' }, { k: 'salvage', label: 'Estimated Salvage Volume (kg)', xlabel: 'Estimated Salvage Volume (kg)', t: 'num', w: 128, ph: 'e.g. 1500' }];
   
-  var opts = { lpmethod: ['Man/Animal', 'Mechanized'], hlmethod: ['Animal', 'Mechanized'], tmethod: ['Furrow', 'Ridge'], spacing: ['1.1 x 0.5', '1.0 x 0.5'], imethod: ['Hill to Hill', 'Alternate Furrow - With Dike', 'Alternate Furrow - W/O Dike', 'Full Furrow - With Dike', 'Full Furrow - W/O Dike '], wsource: ['Underground - Shallow Tube Well', 'Underground - Deep Well', 'Surface - Spring', 'Surface - River and Lake', "Gov't Irrigation Canal", 'Others'], ppe: ['C', 'I'] };
+  var opts = { lpmethod: ['Man/Animal', 'Mechanized'], hlmethod: ['Man/Animal', 'Mechanized'], tmethod: ['Furrow', 'Ridge'], spacing: ['1.1 x 0.5', '1.0 x 0.5'], imethod: ['Hill to Hill', 'Alternate Furrow - With Dike', 'Alternate Furrow - W/O Dike', 'Full Furrow - With Dike', 'Full Furrow - W/O Dike '], wsource: ['Underground - Shallow Tube Well', 'Underground - Deep Well', 'Surface - Spring', 'Surface - River and Lake', "Gov't Irrigation Canal", 'Others'], ppe: ['C', 'I'] };
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
   function onSelectChange(e) { var s = e.target; if (s.value !== '__add') return; var g = s.getAttribute('data-group'); var v = prompt('Add new option:'); if (v && v.trim()) { v = v.trim(); if (opts[g].indexOf(v) < 0) { opts[g].push(v); if(window.IFAR_CLOUD_OPTIONS) window.IFAR_CLOUD_OPTIONS.add(g,v); document.querySelectorAll('select[data-group="' + g + '"]').forEach(function (x) { var addOpt = x.querySelector('option[value="__add"]'); var o = el('option', null, v); o.value = v; x.insertBefore(o, addOpt); }); } s.value = v; } else s.value = ''; }
@@ -4430,7 +4430,7 @@ window.IFAR_NA = (function () {
     { k: 'manual', label: 'Manual Y/N', xlabel: 'Manual Y/N', t: 'yn', w: 64 },
     { k: 'cpa', label: 'Suckercide Used', xlabel: 'Suckercide Used', t: 'sel', g: 'suckercide', w: 116 },
     { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' },
-    { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, locked: true, ph: '15ml', defVal: '15ml' },
+    { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, ph: '15ml', defVal: '15ml', list: 'toppingDosageOptions' },
     { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }
   ];
   
@@ -4632,6 +4632,7 @@ window.IFAR_NA = (function () {
       inp.type = f.t === 'date' ? 'date' : 'text';
       inp.placeholder = f.ph || (f.t === 'date' ? 'MM/DD/YYYY' : f.label);
       inp.setAttribute('data-k', f.k);
+      if (f.list) inp.setAttribute('list', f.list);
       if (f.defVal) inp.value = f.defVal;
     }
     if (f.locked) {
@@ -4806,6 +4807,18 @@ window.IFAR_NA = (function () {
       var bodyA = el('tbody'); bodyA.id = 'weeksBody';
       for (var i = 1; i <= 12; i++) bodyA.appendChild(buildWeekRow(i));
       tblA.appendChild(bodyA);
+
+      var dosageList = document.getElementById('toppingDosageOptions');
+      if (!dosageList) {
+        dosageList = el('datalist');
+        dosageList.id = 'toppingDosageOptions';
+        ['15ml', '20ml'].forEach(function (value) {
+          var option = el('option');
+          option.value = value;
+          dosageList.appendChild(option);
+        });
+        document.body.appendChild(dosageList);
+      }
 
       var tblB = document.getElementById('tblRd'); tblB.innerHTML = '';
       buildHeader(tblB, ROUND_FIELDS, 'Plot', 104);
