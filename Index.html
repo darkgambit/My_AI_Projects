@@ -4423,14 +4423,14 @@ window.IFAR_NA = (function () {
   var LAB = [['famM', 'Fam M'], ['famF', 'Fam F'], ['ftM', 'FT M'], ['ftF', 'FT F'], ['tmpM', 'Tmp M'], ['tmpF', 'Tmp F']];
   var WEEK_FIELDS = [{ k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 }, { k: 'stage', label: 'Plant Stage', xlabel: 'Plant Stage', t: 'sel', g: 'stage', w: 150 }, { k: 'scouting', label: 'Insect Scouting', xlabel: 'Insect Scouting', t: 'yn', w: 62 }, { k: 'insect', label: 'Insect Found', xlabel: 'Insect Found', t: 'sel', g: 'insect', w: 124 }, { k: 'etl', label: 'ETL Reached', xlabel: 'ETL Reached', t: 'yn', w: 58 }, { k: 'picking', label: 'Manual Picking', xlabel: 'Manual Picking', t: 'yn', w: 62 }, { k: 'cpa', label: 'CPA Used', xlabel: 'CPA Used', t: 'sel', g: 'cpa', w: 110 }, { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' }, { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, locked: true, ph: 'auto' }, { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }, { k: 'sign', label: 'Warning Sign Installed', xlabel: 'Warning Sign', t: 'yn', w: 96 }];
   
-  // Topping / Suckercide: 'Suckercide Used' (Flumex, Flupro, N/A), dosage default 15ml (fixed)
+  // Topping / Suckercide dosage defaults to 15ml; choose 15ml/20ml or type another value.
   var ROUND_FIELDS = [
     { k: 'date', label: 'Date', xlabel: 'Date', t: 'date', w: 122 },
     { k: 'chem', label: 'Chemical Y/N', xlabel: 'Chemical Y/N', t: 'yn', w: 64 },
     { k: 'manual', label: 'Manual Y/N', xlabel: 'Manual Y/N', t: 'yn', w: 64 },
     { k: 'cpa', label: 'Suckercide Used', xlabel: 'Suckercide Used', t: 'sel', g: 'suckercide', w: 116 },
     { k: 'tankLoad', label: 'No. of Tank Load', xlabel: 'No. of Tank Load', t: 'num', w: 112, ph: 'e.g. 2' },
-    { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'text', w: 80, ph: '15ml', defVal: '15ml', list: 'toppingDosageOptions' },
+    { k: 'dosage', label: 'Dosage', xlabel: 'Dosage', t: 'dose', w: 150, ph: 'Enter dosage', defVal: '15ml' },
     { k: 'ppe', label: 'PPE', xlabel: 'PPE', t: 'sel', g: 'ppe', w: 64 }
   ];
   
@@ -4621,6 +4621,39 @@ window.IFAR_NA = (function () {
   
   function buildFieldCell(f, tr) {
     var td = el('td'); var inp;
+    if (f.t === 'dose') {
+      var doseWrap = el('div');
+      doseWrap.style.display = 'flex';
+      doseWrap.style.alignItems = 'center';
+      doseWrap.style.gap = '4px';
+      var doseSelect = el('select', 'inp');
+      doseSelect.setAttribute('aria-label', 'Choose a common dosage');
+      doseSelect.setAttribute('data-dosage-choice', '1');
+      var doseBlank = el('option', null, 'Choose'); doseBlank.value = ''; doseSelect.appendChild(doseBlank);
+      ['15ml', '20ml'].forEach(function (value) {
+        var option = el('option', null, value); option.value = value; doseSelect.appendChild(option);
+      });
+      doseSelect.style.width = '76px';
+      inp = el('input', 'inp');
+      inp.type = 'text';
+      inp.setAttribute('data-k', f.k);
+      inp.setAttribute('aria-label', 'Dosage; select a common value or type manually');
+      inp.placeholder = f.ph || 'Type dosage';
+      inp.style.width = '86px';
+      inp.style.minWidth = '0';
+      if (f.defVal) inp.value = f.defVal;
+      doseSelect.value = f.defVal || '';
+      doseSelect.addEventListener('change', function () {
+        if (doseSelect.value) inp.value = doseSelect.value;
+      });
+      inp.addEventListener('input', function () {
+        doseSelect.value = (inp.value === '15ml' || inp.value === '20ml') ? inp.value : '';
+      });
+      doseWrap.appendChild(doseSelect);
+      doseWrap.appendChild(inp);
+      td.appendChild(doseWrap);
+      return td;
+    }
     if (f.t === 'yn') inp = makeYN(f.k);
     else if (f.t === 'sel') inp = makeSelect(f.g, f.k);
     else if (f.t === 'num') {
@@ -4632,7 +4665,6 @@ window.IFAR_NA = (function () {
       inp.type = f.t === 'date' ? 'date' : 'text';
       inp.placeholder = f.ph || (f.t === 'date' ? 'MM/DD/YYYY' : f.label);
       inp.setAttribute('data-k', f.k);
-      if (f.list) inp.setAttribute('list', f.list);
       if (f.defVal) inp.value = f.defVal;
     }
     if (f.locked) {
@@ -4688,6 +4720,10 @@ window.IFAR_NA = (function () {
           if (!fnd && v) { var op = el('option', null, v); op.value = v; inp.insertBefore(op, add); }
         }
         window.IFAR_NA.setValue(inp, v);
+        if (k === 'dosage' && tr.closest('#tblRd')) {
+          var dosageChoice = tr.querySelector('[data-dosage-choice]');
+          if (dosageChoice) dosageChoice.value = (v === '15ml' || v === '20ml') ? v : '';
+        }
       }
     });
     window.IFAR_NA.sync(tr);
@@ -4696,6 +4732,7 @@ window.IFAR_NA = (function () {
     var inputs = tr.querySelectorAll('input, select');
     for (var i = 0; i < inputs.length; i++) {
       if (inputs[i].type === 'hidden') continue;
+      if (inputs[i].hasAttribute('data-dosage-choice')) continue;
       if (inputs[i].getAttribute('data-k') === 'dosage' && inputs[i].value === '15ml') continue;
       if (String(inputs[i].value).trim() !== '') return false;
     }
@@ -4807,18 +4844,6 @@ window.IFAR_NA = (function () {
       var bodyA = el('tbody'); bodyA.id = 'weeksBody';
       for (var i = 1; i <= 12; i++) bodyA.appendChild(buildWeekRow(i));
       tblA.appendChild(bodyA);
-
-      var dosageList = document.getElementById('toppingDosageOptions');
-      if (!dosageList) {
-        dosageList = el('datalist');
-        dosageList.id = 'toppingDosageOptions';
-        ['15ml', '20ml'].forEach(function (value) {
-          var option = el('option');
-          option.value = value;
-          dosageList.appendChild(option);
-        });
-        document.body.appendChild(dosageList);
-      }
 
       var tblB = document.getElementById('tblRd'); tblB.innerHTML = '';
       buildHeader(tblB, ROUND_FIELDS, 'Plot', 104);
